@@ -37,6 +37,7 @@ namespace RemoteViewing.Utility
         ManualResetEvent _requestExit;
         AutoResetEvent _requestUpdate;
         Thread _requestThread;
+        bool _useSignal;
 
         public void Start(Func<bool> action, Func<double> getUpdateRateFunc, bool useSignal)
         {
@@ -51,10 +52,20 @@ namespace RemoteViewing.Utility
                 while (true)
                 {
                     long startTime = Stopwatch.GetTimestamp();
-                    if (useSignal && WaitHandle.WaitAny(waitHandles) == 1) { return; }
+                    if (useSignal && WaitHandle.WaitAny(waitHandles) == 1)
+                    {
+                        return;
+                    }
 
                     bool didAction;
-                    try { didAction = action(); } catch (Exception) { return; }
+                    try
+                    {
+                        didAction = action();
+                    }
+                    catch (Exception)
+                    {
+                        return;
+                    }
 
                     var elapsedTime = Math.Max(0, Stopwatch.GetTimestamp() - startTime);
                     var secondsToWait = 1.0 / getUpdateRateFunc() - (double)elapsedTime / Stopwatch.Frequency;
@@ -63,15 +74,22 @@ namespace RemoteViewing.Utility
                     {
                         if (didAction) // Rate limit if true.
                         {
-                            if (_requestExit.WaitOne(timeout)) { return; }
+                            if (_requestExit.WaitOne(timeout))
+                            {
+                                return;
+                            }
                         }
                         else
                         {
-                            if (WaitHandle.WaitAny(waitHandles) == 1) { return; }
+                            if (WaitHandle.WaitAny(waitHandles, timeout) == 1)
+                            {
+                                return;
+                            }
                         }
                     }
                 }
             });
+            _requestThread.Name = "RemoteViewing Periodic Thread";
             _requestThread.IsBackground = true;
             _requestThread.Start();
         }

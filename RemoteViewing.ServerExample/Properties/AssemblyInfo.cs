@@ -1,7 +1,7 @@
 ﻿#region License
 /*
 RemoteViewing VNC Client/Server Library for .NET
-Copyright (c) 2013 James F. Bellinger <http://software.seekye.com/remoteviewing>
+Copyright (c) 2013, 2025 James F. Bellinger <http://software.seekye.com/remoteviewing>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

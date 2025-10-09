@@ -175,6 +175,7 @@ namespace RemoteViewing.Vnc
                 }
 
                 _threadMain = new Thread(ThreadMain);
+                _threadMain.Name = "RemoteViewing Client Connection";
                 _threadMain.IsBackground = true;
                 _threadMain.Start();
             }

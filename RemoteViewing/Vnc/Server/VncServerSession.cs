@@ -1,7 +1,7 @@
 ﻿#region License
 /*
 RemoteViewing VNC Client/Server Library for .NET
-Copyright (c) 2013 James F. Bellinger <http://software.seekye.com/remoteviewing>
+Copyright (c) 2013, 2025 James F. Bellinger <http://software.seekye.com/remoteviewing>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
@@ -25,6 +25,8 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #endregion
+
+//#define PRINT_DEBUG_BANDWIDTH_STATS
 
 using System;
 using System.Collections.Generic;
@@ -107,6 +109,8 @@ namespace RemoteViewing.Vnc.Server
         /// </summary>
         public event EventHandler<RemoteClipboardChangedEventArgs> RemoteClipboardChanged;
 
+        long _debugRawPixelBytes, _debugHexPixelBytesIn, _debugHexPixelBytesOut;
+
         struct Rectangle
         {
             public VncRectangle Region;
@@ -167,6 +171,7 @@ namespace RemoteViewing.Vnc.Server
                 _c.Stream = stream;
 
                 _threadMain = new Thread(ThreadMain);
+                _threadMain.Name = "RemoteViewing Server Connected User";
                 _threadMain.IsBackground = true;
                 _threadMain.Start();
             }
@@ -523,6 +528,8 @@ namespace RemoteViewing.Vnc.Server
         /// </summary>
         public void FramebufferManualBeginUpdate()
         {
+            _debugRawPixelBytes = 0; _debugHexPixelBytesIn = 0; _debugHexPixelBytesOut = 0;
+
             _fbuRectangles.Clear();
         }
 
@@ -588,43 +595,86 @@ namespace RemoteViewing.Vnc.Server
         public unsafe void FramebufferManualInvalidate(VncRectangle region)
         {
             var fb = Framebuffer; var cpf = _clientPixelFormat;
-            region = VncRectangle.Intersect(region, new VncRectangle(0, 0, _clientWidth, _clientHeight));
+            int cw = _clientWidth, ch = _clientHeight;
+            region = VncRectangle.Intersect(region, new VncRectangle(0, 0, cw, ch));
             if (region.IsEmpty) { return; }
 
             int x = region.X, y = region.Y, w = region.Width, h = region.Height, bpp = cpf.BytesPerPixel;
-            var contents = new byte[w * h * bpp];
 
+            // Previously this reallocated contents every send. Let's not do that.
             fixed (int* sourcePixels = fb.GetPixels())
-            fixed (byte* targetPixels = contents)
             {
-                VncPixelFormat.Copy((IntPtr)sourcePixels, fb.Width * 4, VncPixelFormat.Format32bpp, region,
-                                    (IntPtr)targetPixels, w * bpp, cpf);
-            }
-
-#if DEFLATESTREAM_FLUSH_WORKS
-            if (_clientEncoding.Contains(VncEncoding.Zlib))
-            {
-                _zlibMemoryStream.Position = 0;
-                _zlibMemoryStream.SetLength(0);
-                _zlibMemoryStream.Write(new byte[4], 0, 4);
-
-                if (_zlibDeflater == null)
+                // Are ALL the pixels the SAME, and is w = 16 and h = 16? If so, we'll use "Hextile".
+                // This is a greatly restricted case, but it'll cover a lot of normal desktop use,
+                // since that is our scan size right now.
+                if (w == 16 && h == 16)
                 {
-                    _zlibMemoryStream.Write(new[] { (byte)120, (byte)218 }, 0, 2);
-                    _zlibDeflater = new DeflateStream(_zlibMemoryStream, CompressionMode.Compress, false);
+                    if (_clientEncoding.Contains(VncEncoding.Hextile))
+                    {
+                        int* pixel = sourcePixels + y * cw + x; int stride = cw - 16;
+                        int pixel0 = *pixel;
+
+                        for (int iy = 0; iy < 16; iy++)
+                        {
+                            for (int ix = 0; ix < 16; ix++)
+                            {
+                                if (*pixel != pixel0) { goto notHexTile; }
+                                pixel++;
+                            }
+                            pixel += stride;
+                        }
+
+                        _debugHexPixelBytesIn += w * h * bpp;
+                        _debugHexPixelBytesOut += 1 + bpp;
+
+                        var hexContents = new byte[1 + bpp];
+                        hexContents[0] = 2; // subencoding 'Background Specified = 2'
+
+                        fixed (byte* targetPixel = hexContents)
+                        {
+                            VncPixelFormat.Copy((IntPtr)sourcePixels, fb.Width * 4, VncPixelFormat.Format32bpp, new VncRectangle(x, y, 1, 1),
+                                                (IntPtr)(targetPixel + 1), bpp, cpf);
+                        }
+
+                        AddRegion(region, VncEncoding.Hextile, hexContents);
+                        return;
+                    }
+
+                notHexTile: ;
                 }
 
-                _zlibDeflater.Write(contents, 0, contents.Length);
-                _zlibDeflater.Flush();
-                contents = _zlibMemoryStream.ToArray();
+                _debugRawPixelBytes += w * h * bpp;
+                var rawContents = new byte[w * h * bpp];
 
-                VncUtility.EncodeUInt32BE(contents, 0, (uint)(contents.Length - 4));
-                AddRegion(region, VncEncoding.Zlib, contents);
-            }
-            else
-#endif
+                fixed (byte* targetPixels = rawContents)
+                {
+                    VncPixelFormat.Copy((IntPtr)sourcePixels, fb.Width * 4, VncPixelFormat.Format32bpp, region,
+                                        (IntPtr)targetPixels, w * bpp, cpf);
+                }
+#if DEFLATESTREAM_FLUSH_WORKS
+        if (_clientEncoding.Contains(VncEncoding.Zlib))
+        {
+            _zlibMemoryStream.Position = 0;
+            _zlibMemoryStream.SetLength(0);
+            _zlibMemoryStream.Write(new byte[4], 0, 4);
+
+            if (_zlibDeflater == null)
             {
-                AddRegion(region, VncEncoding.Raw, contents);
+                _zlibMemoryStream.Write(new[] { (byte)120, (byte)218 }, 0, 2);
+                _zlibDeflater = new DeflateStream(_zlibMemoryStream, CompressionMode.Compress, false);
+            }
+
+            _zlibDeflater.Write(contents, 0, contents.Length);
+            _zlibDeflater.Flush();
+            contents = _zlibMemoryStream.ToArray();
+
+            VncUtility.EncodeUInt32BE(contents, 0, (uint)(contents.Length - 4));
+            AddRegion(region, VncEncoding.Zlib, contents);
+        }
+        else
+#endif
+
+                AddRegion(region, VncEncoding.Raw, rawContents);
             }
         }
 
@@ -647,6 +697,13 @@ namespace RemoteViewing.Vnc.Server
         /// </summary>
         public bool FramebufferManualEndUpdate()
         {
+#if PRINT_DEBUG_BANDWIDTH_STATS
+            if (_debugRawPixelBytes > 0 || _debugHexPixelBytesIn > 0 || _debugHexPixelBytesOut > 0)
+            {
+                Console.WriteLine(string.Format("Raw: {0}  Hex: {1} -> {2}", _debugRawPixelBytes, _debugHexPixelBytesIn, _debugHexPixelBytesOut));
+            }
+#endif
+
             var fb = Framebuffer;
             if (_clientWidth != fb.Width || _clientHeight != fb.Height)
             {

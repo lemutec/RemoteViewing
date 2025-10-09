@@ -27,6 +27,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endregion
 
 using System;
+using System.Diagnostics;
 using System.Drawing;
 using System.Windows.Forms;
 using RemoteViewing.Vnc;
@@ -89,7 +90,7 @@ namespace RemoteViewing.Windows.Forms.Server
 
             using (var g = Graphics.FromImage(_bitmap))
             {
-                g.CopyFromScreen(bounds.X, bounds.Y, 0, 0, bounds.Size);
+                g.CopyFromScreen(bounds.X, bounds.Y, 0, 0, bounds.Size, CopyPixelOperation.SourceCopy);
 
                 lock (_framebuffer.SyncRoot)
                 {

@@ -1,3 +1,9 @@
+1.0.1 (October 9, 2025):
+  Added (very) basic Hextile support to the VNC server.
+  Fixed a lock-up in the VNC server.
+  The VNC server is now 2.5X faster at updating frames.
+  Started on bandwidth statistics support. This is not very accurate yet.
+  
 1.0.0 (September 24, 2025):
   Added support for 16-bit color.
   Fixed mouse coordinate scaling on the Windows Forms control.

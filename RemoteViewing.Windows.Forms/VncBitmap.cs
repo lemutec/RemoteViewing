@@ -53,7 +53,11 @@ namespace RemoteViewing.Windows.Forms
             if (sourceRectangle.IsEmpty) { return; }
 
             var winformsRect = new Rectangle(sourceRectangle.X, sourceRectangle.Y, sourceRectangle.Width, sourceRectangle.Height);
-            var data = source.LockBits(winformsRect, ImageLockMode.ReadOnly, PixelFormat.Format32bppRgb);
+            var data = source.LockBits(winformsRect, ImageLockMode.ReadOnly,
+                // We are going to ignore the alpha channel regardless, so don't bother converting it.
+                // On a 1920x1080 screen, I found that the Argb -> Rgb conversion was taking 20 ms (out of 30 ms) of the capture time...
+                source.PixelFormat == PixelFormat.Format32bppArgb || source.PixelFormat == PixelFormat.Format32bppPArgb
+                ? source.PixelFormat : PixelFormat.Format32bppRgb);
             try
             {
                 fixed (int* framebufferData = target.GetPixels())
