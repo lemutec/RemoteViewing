@@ -28,7 +28,8 @@
         /// </summary>
         private void InitializeComponent()
         {
-            RemoteViewing.Vnc.VncClient vncClient1 = new RemoteViewing.Vnc.VncClient();
+            this.components = new System.ComponentModel.Container();
+            RemoteViewing.Vnc.VncClient vncClient2 = new RemoteViewing.Vnc.VncClient();
             this.mainTableLayoutPanel = new System.Windows.Forms.TableLayoutPanel();
             this.topTableLayoutPanel = new System.Windows.Forms.TableLayoutPanel();
             this.txtPassword = new System.Windows.Forms.TextBox();
@@ -39,6 +40,7 @@
             this.txtHostname = new System.Windows.Forms.TextBox();
             this.txtPort = new System.Windows.Forms.TextBox();
             this.vncControl = new RemoteViewing.Windows.Forms.VncControl();
+            this.tmrStatistics = new System.Windows.Forms.Timer(this.components);
             this.mainTableLayoutPanel.SuspendLayout();
             this.topTableLayoutPanel.SuspendLayout();
             this.SuspendLayout();
@@ -170,9 +172,9 @@
             this.vncControl.AllowClipboardSharingFromServer = true;
             this.vncControl.AllowClipboardSharingToServer = true;
             this.vncControl.BackColor = System.Drawing.Color.Black;
-            vncClient1.MaxUpdateRate = 15D;
-            vncClient1.UserData = null;
-            this.vncControl.Client = vncClient1;
+            vncClient2.MaxUpdateRate = 15D;
+            vncClient2.UserData = null;
+            this.vncControl.Client = vncClient2;
             this.vncControl.Dock = System.Windows.Forms.DockStyle.Fill;
             this.vncControl.Location = new System.Drawing.Point(5, 46);
             this.vncControl.Margin = new System.Windows.Forms.Padding(5);
@@ -184,6 +186,12 @@
             this.vncControl.ConnectionFailed += new System.EventHandler(this.vncControl_ConnectionFailed);
             this.vncControl.Closed += new System.EventHandler(this.vncControl_Closed);
             // 
+            // tmrStatistics
+            // 
+            this.tmrStatistics.Enabled = true;
+            this.tmrStatistics.Interval = 250;
+            this.tmrStatistics.Tick += new System.EventHandler(this.tmrStatistics_Tick);
+            // 
             // MainForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
@@ -192,7 +200,6 @@
             this.Controls.Add(this.mainTableLayoutPanel);
             this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "MainForm";
-            this.Text = "RemoteViewing - Example VNC Client";
             this.WindowState = System.Windows.Forms.FormWindowState.Maximized;
             this.mainTableLayoutPanel.ResumeLayout(false);
             this.mainTableLayoutPanel.PerformLayout();
@@ -215,5 +222,6 @@
         private Windows.Forms.VncControl vncControl;
         private System.Windows.Forms.TextBox txtPassword;
         private System.Windows.Forms.Label lblPassword;
+        private System.Windows.Forms.Timer tmrStatistics;
     }
 }

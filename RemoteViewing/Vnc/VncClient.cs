@@ -71,6 +71,7 @@ namespace RemoteViewing.Vnc
         public event EventHandler<RemoteClipboardChangedEventArgs> RemoteClipboardChanged;
 
         VncStream _c = new VncStream();
+        VncStatisticsHelper _stats = new VncStatisticsHelper();
         int[] _colorMap;
         VncClientConnectOptions _options;
         double _maxUpdateRate;
@@ -144,6 +145,7 @@ namespace RemoteViewing.Vnc
 
                 _options = options ?? new VncClientConnectOptions();
                 _c.Stream = stream;
+                _stats.Reset();
 
                 try
                 {
@@ -199,6 +201,7 @@ namespace RemoteViewing.Vnc
                         case 0:
                             requester.Signal();
                             HandleFramebufferUpdate();
+                            _stats.Update(_c);
                             break;
 
                         case 1:
@@ -547,6 +550,23 @@ namespace RemoteViewing.Vnc
         {
             var ev = RemoteClipboardChanged;
             if (ev != null) { ev(this, e); }
+        }
+
+        public VncClientStatistics GetStatistics()
+        {
+            var si = _stats;
+            var so = new VncClientStatistics();
+
+            lock (si.SyncRoot)
+            {
+                si.Update(_c);
+                so.BytesReceived = si.BytesReceived;
+                so.BytesReceivedPerSecond = si.BytesReceivedPerSecond;
+                so.BytesSent = si.BytesSent;
+                so.BytesSentPerSecond = si.BytesSentPerSecond;
+            }
+
+            return so;
         }
 
         /// <summary>

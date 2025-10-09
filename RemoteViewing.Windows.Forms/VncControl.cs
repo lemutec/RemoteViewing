@@ -61,6 +61,11 @@ namespace RemoteViewing.Windows.Forms
         /// </summary>
         public event EventHandler Closed;
 
+        /// <summary>
+        /// Occurs when the framebuffer changes.
+        /// </summary>
+        public event EventHandler FramebufferChanged;
+
         const int WM_CLIPBOARDUPDATE = 0x31d;
 
         int _buttons;
@@ -160,12 +165,12 @@ namespace RemoteViewing.Windows.Forms
             }
         }
 
-        void UpdateFramebuffer(bool force)
+        void UpdateFramebuffer()
         {
             if (_client == null) { return; }
 
             var framebuffer = _client.Framebuffer;
-            UpdateFramebuffer(force, framebuffer);
+            UpdateFramebuffer(true, framebuffer);
         }
 
         void HandleBell(object sender, EventArgs e)
@@ -247,7 +252,21 @@ namespace RemoteViewing.Windows.Forms
                             Invalidate(new Rectangle(dstX, dstY, dstW, dstH));
                         }
                     }
+
+                    RaiseFramebufferChanged();
                 }));
+        }
+
+        void RaiseFramebufferChanged()
+        {
+            var ev = FramebufferChanged;
+            if (ev != null)
+            {
+                BeginInvoke(new Action(() =>
+                    {
+                        ev(this, EventArgs.Empty);
+                    }));
+            }
         }
 
         void HandleRemoteClipboardChanged(object sender, RemoteClipboardChangedEventArgs e)
@@ -524,7 +543,8 @@ namespace RemoteViewing.Windows.Forms
                 }
 
                 ClearInputState();
-                UpdateFramebuffer(true);
+                UpdateFramebuffer();
+                RaiseFramebufferChanged();
             }
         }
 

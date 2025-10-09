@@ -37,6 +37,7 @@ namespace RemoteViewing.Example
         public MainForm()
         {
             InitializeComponent();
+            UpdateTitle();
         }
 
         private void btnConnect_Click(object sender, EventArgs e)
@@ -88,7 +89,6 @@ namespace RemoteViewing.Example
                                         "Connect", MessageBoxButtons.OK, MessageBoxIcon.Error);
                         return;
                     }
-
                     vncControl.Focus();
                 }
                 finally
@@ -114,6 +114,30 @@ namespace RemoteViewing.Example
         private void vncControl_ConnectionFailed(object sender, EventArgs e)
         {
 
+        }
+
+        private void tmrStatistics_Tick(object sender, EventArgs e)
+        {
+            UpdateTitle();
+        }
+
+        void UpdateTitle()
+        {
+            string title = "RemoteViewing - Example VNC Client";
+
+            Vnc.VncClientStatistics stats = vncControl.Client.GetStatistics();
+            double recv = stats.BytesReceivedPerSecond;
+            double send = stats.BytesSentPerSecond;
+
+            if (recv > 0 || send > 0)
+            {
+                title += string.Format("- {0} KB/s received, {1} KB/s sent"
+                    , (recv / 1024).ToString("0.000")
+                    , (send / 1024).ToString("0.000")
+                    );
+            }
+
+            Text = title;
         }
     }
 }

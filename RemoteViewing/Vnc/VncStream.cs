@@ -30,11 +30,14 @@ using System;
 using System.IO;
 using System.Text;
 using System.Text.RegularExpressions;
+using System.Threading;
 
 namespace RemoteViewing.Vnc
 {
     sealed class VncStream
     {
+        long _bytesReceived, _bytesSent;
+
         public VncStream()
         {
             SyncRoot = new object();
@@ -59,7 +62,7 @@ namespace RemoteViewing.Vnc
             {
                 int bytes = Stream.Read(buffer, offset + i, count - i);
                 Require(bytes > 0, "Lost connection.", VncFailureReason.NetworkError);
-                i += bytes;
+                Interlocked.Add(ref _bytesReceived, bytes); i += bytes;
             }
         }
 
@@ -67,6 +70,7 @@ namespace RemoteViewing.Vnc
         {
             int value = Stream.ReadByte();
             Require(value >= 0, "Lost connection.", VncFailureReason.NetworkError);
+            Interlocked.Increment(ref _bytesReceived);
             return (byte)value;
         }
 
@@ -126,6 +130,7 @@ namespace RemoteViewing.Vnc
                 try
                 {
                     stream.Write(buffer, offset, count);
+                    Interlocked.Add(ref _bytesSent, count);
                 }
                 catch (ObjectDisposedException)
                 {
@@ -201,6 +206,16 @@ namespace RemoteViewing.Vnc
         public static void SanityCheck(bool condition)
         {
             Require(condition, "Sanity check failed.", Vnc.VncFailureReason.SanityCheckFailed);
+        }
+
+        public long BytesReceived
+        {
+            get { return Interlocked.Read(ref _bytesReceived); }
+        }
+
+        public long BytesSent
+        {
+            get { return Interlocked.Read(ref _bytesSent); }
         }
 
         public Stream Stream
