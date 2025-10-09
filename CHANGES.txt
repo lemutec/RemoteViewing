@@ -1,4 +1,5 @@
-1.0.2 (October 10, 2025):
+1.0.2 (TBD):
+  Fixed an occasional crash on exit in the Windows Forms VNC control.
   On 64-bit platforms, the VNC server is now another 25% faster when the desktop is idle.
   
 1.0.1 (October 9, 2025):

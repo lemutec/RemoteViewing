@@ -108,6 +108,15 @@ namespace RemoteViewing.Windows.Forms
                 catch { }
             }
 
+            if (Client != null)
+            {
+                try { Client.Close(); }
+                catch { }
+
+                try { Client = null; }
+                catch { }
+            }
+
             base.OnHandleDestroyed(e);
         }
 
