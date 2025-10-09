@@ -28,6 +28,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Net.Sockets;
 using System.Threading;
@@ -196,6 +197,8 @@ namespace RemoteViewing.Vnc
                 {
                     var command = _c.ReceiveByte();
 
+                    long ts0 = Stopwatch.GetTimestamp();
+
                     switch (command)
                     {
                         case 0:
@@ -221,6 +224,10 @@ namespace RemoteViewing.Vnc
                                 VncFailureReason.UnrecognizedProtocolElement);
                             break;
                     }
+
+                    long ts1 = Stopwatch.GetTimestamp();
+                    double cpuTime = (double)(ts1 - ts0) / (double)Stopwatch.Frequency;
+                    _stats.AddCpuTime(cpuTime);
                 }
             }
             catch (ObjectDisposedException)
@@ -564,6 +571,7 @@ namespace RemoteViewing.Vnc
                 so.BytesReceivedPerSecond = si.BytesReceivedPerSecond;
                 so.BytesSent = si.BytesSent;
                 so.BytesSentPerSecond = si.BytesSentPerSecond;
+                so.CpuUsage = si.CpuUsage;
             }
 
             return so;

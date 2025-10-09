@@ -7,5 +7,7 @@
 
         public double BytesReceivedPerSecond { get; set; }
         public double BytesSentPerSecond { get; set; }
+
+        public double CpuUsage { get; set; }
     }
 }

@@ -61,6 +61,24 @@ namespace RemoteViewing.ServerExample
             e.Accept(Password.ToCharArray());
         }
 
+        static void HandleFramebufferUpdated(object sender, EventArgs e)
+        {
+            var stats = Session.GetStatistics();
+
+            double recv = stats.BytesReceivedPerSecond;
+            double send = stats.BytesSentPerSecond;
+            int cpu = (int)Math.Round(stats.CpuUsage * 100);
+
+            if (recv / 1024 >= 0.1 || send / 1024 >= 0.1 || cpu > 0)
+            {
+                Console.WriteLine(string.Format("Statistics: {0} KB/s received, {1} KB/s sent, {2}% CPU"
+                    , (recv / 1024).ToString("0.0")
+                    , (send / 1024).ToString("0.0")
+                    , cpu
+                    ));
+            }
+        }
+
         [STAThread]
         static void Main(string[] args)
         {
@@ -84,6 +102,7 @@ namespace RemoteViewing.ServerExample
                 Session.ConnectionFailed += HandleConnectionFailed;
                 Session.Closed += HandleClosed;
                 Session.PasswordProvided += HandlePasswordProvided;
+                Session.FramebufferUpdated += HandleFramebufferUpdated;
                 Session.SetFramebufferSource(new VncScreenFramebufferSource("Hello World", Screen.PrimaryScreen));
                 Session.Connect(client.GetStream(), options);
             }

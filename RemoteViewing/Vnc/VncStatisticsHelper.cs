@@ -14,6 +14,7 @@ namespace RemoteViewing.Vnc
         long _bytesReceived, _bytesSent;
         double _bytesReceivedPerSecond;
         double _bytesSentPerSecond;
+        double _cpuTime, _cpuUsage;
         long _timestamp;
 
         public VncStatisticsHelper()
@@ -29,7 +30,18 @@ namespace RemoteViewing.Vnc
                 _bytesReceived = 0; _bytesSent = 0;
                 _bytesReceivedPerSecond = 0;
                 _bytesSentPerSecond = 0;
+                _cpuTime = _cpuUsage = 0;
                 _timestamp = Stopwatch.GetTimestamp();
+            }
+        }
+
+        public void AddCpuTime(double seconds)
+        {
+            if (seconds < 0) { return; }
+
+            lock (SyncRoot)
+            {
+                _cpuTime += seconds;
             }
         }
 
@@ -47,6 +59,7 @@ namespace RemoteViewing.Vnc
                 {
                     UpdateRate(alpha, dt, ref _bytesReceived, stream.BytesReceived, ref _bytesReceivedPerSecond);
                     UpdateRate(alpha, dt, ref _bytesSent, stream.BytesSent, ref _bytesSentPerSecond);
+                    UpdateRate(alpha, dt, _cpuTime, ref _cpuUsage); _cpuTime = 0;
                 }
             }
         }
@@ -54,7 +67,11 @@ namespace RemoteViewing.Vnc
         void UpdateRate(double alpha, double dt, ref long oldValue, long newValue, ref double rate)
         {
             long delta = newValue - oldValue; oldValue = newValue;
+            UpdateRate(alpha, dt, delta, ref rate);
+        }
 
+        void UpdateRate(double alpha, double dt, double delta, ref double rate)
+        {
             double instantRate = delta / dt;
             rate += (instantRate - rate) * alpha;
         }
@@ -77,6 +94,11 @@ namespace RemoteViewing.Vnc
         public double BytesSentPerSecond
         {
             get { return _bytesSentPerSecond; }
+        }
+
+        public double CpuUsage
+        {
+            get { return _cpuUsage; }
         }
 
         public object SyncRoot

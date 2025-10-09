@@ -29,6 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Threading;
@@ -86,6 +87,11 @@ namespace RemoteViewing.Vnc.Server
         public event EventHandler<FramebufferUpdatingEventArgs> FramebufferUpdating;
 
         /// <summary>
+        /// Occurs when the framebuffer has been updated.
+        /// </summary>
+        public event EventHandler FramebufferUpdated;
+
+        /// <summary>
         /// Occurs when a key has been pressed or released.
         /// </summary>
         public event EventHandler<KeyChangedEventArgs> KeyChanged;
@@ -108,6 +114,7 @@ namespace RemoteViewing.Vnc.Server
             public byte[] Contents;
         }
         VncStream _c = new VncStream();
+        VncStatisticsHelper _stats = new VncStatisticsHelper();
         VncEncoding[] _clientEncoding = new VncEncoding[0];
         VncPixelFormat _clientPixelFormat;
         int _clientWidth, _clientHeight;
@@ -466,6 +473,8 @@ namespace RemoteViewing.Vnc.Server
         {
             var e = new FramebufferUpdatingEventArgs();
 
+            long ts0 = Stopwatch.GetTimestamp();
+
             lock (FramebufferUpdateRequestLock)
             {
                 if (FramebufferUpdateRequest != null)
@@ -495,6 +504,14 @@ namespace RemoteViewing.Vnc.Server
                     }
                 }
             }
+
+            long ts1 = Stopwatch.GetTimestamp();
+            double cpuTime = (double)(ts1 - ts0) / (double)Stopwatch.Frequency;
+            _stats.AddCpuTime(cpuTime);
+
+            _stats.Update(_c);
+
+            if (e.SentChanges) { OnFramebufferUpdated(EventArgs.Empty); }
 
             return e.SentChanges;
         }
@@ -737,6 +754,17 @@ namespace RemoteViewing.Vnc.Server
             if (ev != null) { ev(this, e); }
         }
 
+        protected virtual void OnFramebufferUpdated(EventArgs e)
+        {
+            RaiseFramebufferUpdated(e);
+        }
+
+        protected void RaiseFramebufferUpdated(EventArgs e)
+        {
+            var ev = FramebufferUpdated;
+            if (ev != null) { ev(this, e); }
+        }
+
         protected void OnKeyChanged(KeyChangedEventArgs e)
         {
             RaiseKeyChanged(e);
@@ -768,6 +796,24 @@ namespace RemoteViewing.Vnc.Server
         {
             var ev = RemoteClipboardChanged;
             if (ev != null) { ev(this, e); }
+        }
+
+        public VncServerSessionStatistics GetStatistics()
+        {
+            var si = _stats;
+            var so = new VncServerSessionStatistics();
+
+            lock (si.SyncRoot)
+            {
+                si.Update(_c);
+                so.BytesReceived = si.BytesReceived;
+                so.BytesReceivedPerSecond = si.BytesReceivedPerSecond;
+                so.BytesSent = si.BytesSent;
+                so.BytesSentPerSecond = si.BytesSentPerSecond;
+                so.CpuUsage = si.CpuUsage;
+            }
+
+            return so;
         }
 
         /// <summary>

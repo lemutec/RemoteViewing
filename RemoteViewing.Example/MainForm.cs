@@ -128,12 +128,14 @@ namespace RemoteViewing.Example
             Vnc.VncClientStatistics stats = vncControl.Client.GetStatistics();
             double recv = stats.BytesReceivedPerSecond;
             double send = stats.BytesSentPerSecond;
+            int cpu = (int)Math.Round(stats.CpuUsage * 100);
 
-            if (recv > 0 || send > 0)
+            if (recv / 1024 >= 0.1 || send / 1024 >= 0.1 || cpu > 0)
             {
-                title += string.Format("- {0} KB/s received, {1} KB/s sent"
-                    , (recv / 1024).ToString("0.000")
-                    , (send / 1024).ToString("0.000")
+                title += string.Format("- {0} KB/s received, {1} KB/s sent, {2}% CPU"
+                    , (recv / 1024).ToString("0.0")
+                    , (send / 1024).ToString("0.0")
+                    , cpu
                     );
             }
 
