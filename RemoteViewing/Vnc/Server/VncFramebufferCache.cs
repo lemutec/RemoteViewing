@@ -86,21 +86,44 @@ namespace RemoteViewing.Vnc.Server
                                 int stride = fb.Width - w, offset = y * fb.Width + x;
                                 int* newPixels = newPixels0 + offset;
                                 int* oldPixels = oldPixels0 + offset;
-
                                 bool changed = false;
 
-                                for (int iy = 0; iy < h; iy++)
+                                if (IntPtr.Size == 8 && (stride & 1) == 0 && (w & 1) == 0 && ((ulong)newPixels & 7) == 0 && ((ulong)oldPixels & 7) == 0)
                                 {
-                                    for (int ix = 0; ix < w; ix++)
+                                    int w64 = w >> 1, stride64 = stride >> 1;
+
+                                    long* newPixels64 = (long*)newPixels;
+                                    long* oldPixels64 = (long*)oldPixels;
+
+                                    for (int iy = 0; iy < h; iy++)
                                     {
-                                        if (*oldPixels != *newPixels)
+                                        for (int ix = 0; ix < w64; ix++)
                                         {
-                                            *oldPixels = *newPixels;
-                                            changed = true;
+                                            if (*oldPixels64 != *newPixels64)
+                                            {
+                                                *oldPixels64 = *newPixels64;
+                                                changed = true;
+                                            }
+                                            oldPixels64++; newPixels64++;
                                         }
-                                        oldPixels++; newPixels++;
+                                        oldPixels64 += stride64; newPixels64 += stride64;
                                     }
-                                    oldPixels += stride; newPixels += stride;
+                                }
+                                else
+                                {
+                                    for (int iy = 0; iy < h; iy++)
+                                    {
+                                        for (int ix = 0; ix < w; ix++)
+                                        {
+                                            if (*oldPixels != *newPixels)
+                                            {
+                                                *oldPixels = *newPixels;
+                                                changed = true;
+                                            }
+                                            oldPixels++; newPixels++;
+                                        }
+                                        oldPixels += stride; newPixels += stride;
+                                    }
                                 }
 
                                 if (changed)

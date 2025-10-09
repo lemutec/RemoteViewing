@@ -1,3 +1,6 @@
+1.0.2 (October 10, 2025):
+  On 64-bit platforms, the VNC server is now another 25% faster when the desktop is idle.
+  
 1.0.1 (October 9, 2025):
   Added (very) basic Hextile support to the VNC server.
   Fixed a lock-up in the VNC server.
