@@ -611,17 +611,37 @@ namespace RemoteViewing.Vnc.Server
                 {
                     if (_clientEncoding.Contains(VncEncoding.Hextile))
                     {
-                        int* pixel = sourcePixels + y * cw + x; int stride = cw - 16;
-                        int pixel0 = *pixel;
+                        uint* pixel = (uint*)(sourcePixels + y * cw + x); int stride = cw - 16;
+                        uint pixel0 = *pixel;
 
-                        for (int iy = 0; iy < 16; iy++)
+                        // fast path for 64-bit programs
+                        if (IntPtr.Size == 8 && (stride & 1) == 0 && (w & 1) == 0 && ((ulong)pixel & 7) == 0)
                         {
-                            for (int ix = 0; ix < 16; ix++)
+                            ulong* pixel64 = (ulong*)pixel;
+                            ulong pixel640 = (ulong)pixel0 << 32 | pixel0;
+                            int stride64 = stride >> 1;
+
+                            for (int iy = 0; iy < 16; iy++)
                             {
-                                if (*pixel != pixel0) { goto notHexTile; }
-                                pixel++;
+                                for (int ix = 0; ix < 8; ix++)
+                                {
+                                    if (*pixel64 != pixel640) { goto notHexTile; }
+                                    pixel64++;
+                                }
+                                pixel64 += stride64;
                             }
-                            pixel += stride;
+                        }
+                        else
+                        {
+                            for (int iy = 0; iy < 16; iy++)
+                            {
+                                for (int ix = 0; ix < 16; ix++)
+                                {
+                                    if (*pixel != pixel0) { goto notHexTile; }
+                                    pixel++;
+                                }
+                                pixel += stride;
+                            }
                         }
 
                         _debugHexPixelBytesIn += w * h * bpp;

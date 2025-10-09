@@ -88,6 +88,7 @@ namespace RemoteViewing.Vnc.Server
                                 int* oldPixels = oldPixels0 + offset;
                                 bool changed = false;
 
+                                // fast path for 64-bit programs
                                 if (IntPtr.Size == 8 && (stride & 1) == 0 && (w & 1) == 0 && ((ulong)newPixels & 7) == 0 && ((ulong)oldPixels & 7) == 0)
                                 {
                                     int w64 = w >> 1, stride64 = stride >> 1;
