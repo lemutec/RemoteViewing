@@ -64,6 +64,7 @@ namespace RemoteViewing.ServerExample
         static void HandleFramebufferUpdated(object sender, EventArgs e)
         {
             // This is not very accurate yet. Leave it for a future version.
+            /*
             var stats = Session.GetStatistics();
 
             double recv = stats.BytesReceivedPerSecond;
@@ -78,6 +79,7 @@ namespace RemoteViewing.ServerExample
                     , cpu
                     ));
             }
+            */
         }
 
         [STAThread]

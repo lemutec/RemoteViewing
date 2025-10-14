@@ -26,7 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #endregion
 
-#define PRINT_DEBUG_BANDWIDTH_STATS
+//#define PRINT_DEBUG_BANDWIDTH_STATS
 
 using System;
 using System.Collections.Generic;
