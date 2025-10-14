@@ -26,7 +26,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #endregion
 
-//#define PRINT_DEBUG_BANDWIDTH_STATS
+#define PRINT_DEBUG_BANDWIDTH_STATS
 
 using System;
 using System.Collections.Generic;
@@ -34,7 +34,9 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
+using RemoteViewing.Utility;
 
 namespace RemoteViewing.Vnc.Server
 {
@@ -109,13 +111,17 @@ namespace RemoteViewing.Vnc.Server
         /// </summary>
         public event EventHandler<RemoteClipboardChangedEventArgs> RemoteClipboardChanged;
 
-        long _debugRawPixelBytes, _debugHexPixelBytesIn, _debugHexPixelBytesOut;
+        long _debugRawPixelBytes;
+        long _debugHexPixelBytesIn, _debugHexPixelBytesOut;
+        long _debugZLibPixelBytesIn, _debugZLibPixelBytesOut;
 
         struct Rectangle
         {
             public VncRectangle Region;
             public VncEncoding Encoding;
             public byte[] Contents;
+            public int ContentsOffset;
+            public int ContentsSize;
         }
         VncStream _c = new VncStream();
         VncStatisticsHelper _stats = new VncStatisticsHelper();
@@ -132,17 +138,64 @@ namespace RemoteViewing.Vnc.Server
         Utility.PeriodicThread _requester;
         object _specialSync = new object();
         Thread _threadMain;
-#if DEFLATESTREAM_FLUSH_WORKS
         MemoryStream _zlibMemoryStream;
-        DeflateStream _zlibDeflater;
-#endif
+        bool _zlibHeaderSent;
+        unsafe ZLib.z_stream* _zlib;
+        bool _zlibInit;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VncServerSession"/> class.
         /// </summary>
-        public VncServerSession()
+        public unsafe VncServerSession()
         {
             MaxUpdateRate = 15;
+
+            try
+            {
+                _zlib = (ZLib.z_stream*)ZLib.calloc(1, sizeof(ZLib.z_stream));
+
+                int zret = ZLib.deflateInit_(_zlib, ZLib.Z_BEST_SPEED);
+                if (zret == ZLib.Z_OK)
+                {
+                    _zlibInit = true;
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+                _zlib = null;
+            }
+        }
+
+        ~VncServerSession()
+        {
+            DisposeOfZLib();
+        }
+
+        unsafe void DisposeOfZLib()
+        {
+            try
+            {
+                if (_zlib != null)
+                {
+                    if (_zlibInit)
+                    {
+                        int zret = ZLib.deflateEnd(_zlib);
+                      //Debug.Assert(zret == ZLib.Z_OK);
+                        _zlibInit = false;
+                    }
+
+                    ZLib.free(_zlib);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+            }
+            finally
+            {
+                _zlib = null;
+            }
         }
 
         /// <summary>
@@ -236,13 +289,13 @@ namespace RemoteViewing.Vnc.Server
             {
 
             }
-            catch (IOException)
+            catch (IOException e)
             {
 
             }
-            catch (VncException)
+            catch (VncException e)
             {
-
+                Debug.WriteLine(e);
             }
 
             _requester.Stop();
@@ -373,6 +426,28 @@ namespace RemoteViewing.Vnc.Server
 
             var pixelFormat = _c.Receive(VncPixelFormat.Size);
             _clientPixelFormat = VncPixelFormat.Decode(pixelFormat, 0);
+
+            if (_clientPixelFormat.IsPalettized)
+            {
+                // Fine. We'll support this with 2-3-3.
+                lock (_c.SyncRoot)
+                {
+                    if (!IsConnected) { return; }
+                    _c.SendByte(1);
+                    _c.SendByte(0);
+                    _c.SendUInt16BE(0);
+                    _c.SendUInt16BE(256);
+                    for (int color = 0; color < 256; color++)
+                    {
+                        ushort red = (ushort)(((color >> 6) & 0x3) * 21845);
+                        ushort green = (ushort)(((color >> 3) & 0x7) * 9362);
+                        ushort blue = (ushort)(((color >> 0) & 0x7) * 9362);
+                        _c.SendUInt16BE(red);
+                        _c.SendUInt16BE(green);
+                        _c.SendUInt16BE(blue);
+                    }
+                }
+            }
         }
 
         void HandleSetEncodings()
@@ -528,20 +603,41 @@ namespace RemoteViewing.Vnc.Server
         /// </summary>
         public void FramebufferManualBeginUpdate()
         {
-            _debugRawPixelBytes = 0; _debugHexPixelBytesIn = 0; _debugHexPixelBytesOut = 0;
+            _debugRawPixelBytes = 0;
+            _debugHexPixelBytesIn = 0; _debugHexPixelBytesOut = 0;
+            _debugZLibPixelBytesIn = 0; _debugZLibPixelBytesOut = 0;
+
+            _fbuUpdateBytesPtr = 0;
 
             _fbuRectangles.Clear();
         }
 
+        void FlushUpdate()
+        {
+            FramebufferManualEndUpdate(); FramebufferManualBeginUpdate();
+        }
+
         void AddRegion(VncRectangle region, VncEncoding encoding, byte[] contents)
         {
-            _fbuRectangles.Add(new Rectangle() { Region = region, Encoding = encoding, Contents = contents });
+            AddRegion(region, encoding, contents, 0, contents.Length);
+        }
+        
+        void AddRegion(VncRectangle region, VncEncoding encoding, byte[] contents, int contentsOffset, int contentsSize)
+        {
+            _fbuRectangles.Add(new Rectangle()
+            {
+                Region = region,
+                Encoding = encoding,
+                Contents = contents,
+                ContentsOffset = contentsOffset,
+                ContentsSize = contentsSize
+            });
 
             // Avoid the overflow of updated rectangle count.
             // NOTE: EndUpdate may implicitly add one for desktop resizing.
             if (_fbuRectangles.Count >= ushort.MaxValue - 1)
             {
-                FramebufferManualEndUpdate(); FramebufferManualBeginUpdate();
+                FlushUpdate();
             }
         }
 
@@ -570,10 +666,8 @@ namespace RemoteViewing.Vnc.Server
 
         void InitFramebufferEncoder()
         {
-#if DEFLATESTREAM_FLUSH_WORKS
             _zlibMemoryStream = new MemoryStream();
-            _zlibDeflater = null;
-#endif
+            _zlibHeaderSent = false;
         }
 
         /// <summary>
@@ -586,6 +680,32 @@ namespace RemoteViewing.Vnc.Server
             FramebufferManualInvalidate(new VncRectangle(0, 0, Framebuffer.Width, Framebuffer.Height));
         }
 
+        byte[] _fbuUpdateBytes;
+        int _fbuUpdateBytesPtr;
+
+        int AllocUpdateBytes(int count)
+        {
+            if (_fbuUpdateBytesPtr + count > _fbuUpdateBytes.Length)
+            {
+                FlushUpdate();
+            }
+
+            int curPtr = _fbuUpdateBytesPtr;
+            int newPtr = curPtr + count;
+            if (newPtr > _fbuUpdateBytes.Length)
+            {
+                throw new Exception("Internal error. This should never happen. It indicates that we drastically undersized the update buffer.");
+            }
+
+            _fbuUpdateBytesPtr = newPtr;
+            return curPtr;
+        }
+
+        static int GetZLibUpdateMaxBytes(int rawSize)
+        {
+            return 4 + (int)ZLib.compressBound((ulong)rawSize);
+        }
+
         /// <summary>
         /// Queues an update for the specified region.
         /// 
@@ -594,12 +714,22 @@ namespace RemoteViewing.Vnc.Server
         /// <param name="region">The region to invalidate.</param>
         public unsafe void FramebufferManualInvalidate(VncRectangle region)
         {
+            bool zlib = _clientEncoding.Contains(VncEncoding.Zlib) && _zlibInit;
+
             var fb = Framebuffer; var cpf = _clientPixelFormat;
-            int cw = _clientWidth, ch = _clientHeight;
+            int cw = _clientWidth, ch = _clientHeight, bpp = cpf.BytesPerPixel;
             region = VncRectangle.Intersect(region, new VncRectangle(0, 0, cw, ch));
             if (region.IsEmpty) { return; }
 
-            int x = region.X, y = region.Y, w = region.Width, h = region.Height, bpp = cpf.BytesPerPixel;
+            int updateBytesNeeded = cw * ch * bpp; // Technically we could allocate a bit more for protocol overhead, but in practice, "if it overflows, just send it all" works and we don't encounter this often.
+            if (zlib) { updateBytesNeeded = GetZLibUpdateMaxBytes(updateBytesNeeded); }
+            if (_fbuUpdateBytes == null || _fbuUpdateBytes.Length != updateBytesNeeded)
+            {
+                _fbuUpdateBytes = new byte[updateBytesNeeded];
+                _fbuUpdateBytesPtr = 0;
+            }
+
+            int x = region.X, y = region.Y, w = region.Width, h = region.Height;
 
             // Previously this reallocated contents every send. Let's not do that.
             fixed (int* sourcePixels = fb.GetPixels())
@@ -647,55 +777,95 @@ namespace RemoteViewing.Vnc.Server
                         _debugHexPixelBytesIn += w * h * bpp;
                         _debugHexPixelBytesOut += 1 + bpp;
 
-                        var hexContents = new byte[1 + bpp];
-                        hexContents[0] = 2; // subencoding 'Background Specified = 2'
+                        int size = 1 + bpp;
+                        int offset = AllocUpdateBytes(size);
+                        var hexContents = _fbuUpdateBytes;
+                        hexContents[offset] = 2; // subencoding 'Background Specified = 2'
 
                         fixed (byte* targetPixel = hexContents)
                         {
                             VncPixelFormat.Copy((IntPtr)sourcePixels, fb.Width * 4, VncPixelFormat.Format32bpp, new VncRectangle(x, y, 1, 1),
-                                                (IntPtr)(targetPixel + 1), bpp, cpf);
+                                                (IntPtr)(targetPixel + offset + 1), bpp, cpf);
                         }
 
-                        AddRegion(region, VncEncoding.Hextile, hexContents);
+                        AddRegion(region, VncEncoding.Hextile, hexContents, offset, size);
                         return;
                     }
 
                 notHexTile: ;
                 }
 
-                _debugRawPixelBytes += w * h * bpp;
-                var rawContents = new byte[w * h * bpp];
-
-                fixed (byte* targetPixels = rawContents)
                 {
-                    VncPixelFormat.Copy((IntPtr)sourcePixels, fb.Width * 4, VncPixelFormat.Format32bpp, region,
-                                        (IntPtr)targetPixels, w * bpp, cpf);
+                    int rawSize = w * h * bpp;
+                    int allocSize = zlib ? GetZLibUpdateMaxBytes(rawSize) : rawSize;
+                    int rawOffset = AllocUpdateBytes(allocSize);
+                    var rawContents = _fbuUpdateBytes;
+
+                    fixed (byte* targetPixels = rawContents)
+                    {
+                        VncPixelFormat.Copy((IntPtr)sourcePixels, fb.Width * 4, VncPixelFormat.Format32bpp, region,
+                                            (IntPtr)(targetPixels + rawOffset), w * bpp, cpf);
+                    }
+
+                    if (zlib)
+                    {
+                        int zsize;
+
+                        if (allocSize >= 65536)
+                        {
+                            // This only happens when we are invalidating the whole screen (at connect, for example).
+                            // Let's not waste RAM most of the time for this case.
+                            // (To be fair, I *could* make DoCompress use a buffer and do compression in-place. That would avoid this. If I get time...)
+                            byte[] zlibOut = new byte[allocSize];
+
+                            fixed (byte* rawIn = rawContents)
+                            fixed (byte* zlibOutPtr = zlibOut)
+                            {
+                                zsize = DoCompress(rawIn + rawOffset, rawSize, zlibOutPtr, allocSize);
+                            }
+
+                            Array.Copy(zlibOut, 0, rawContents, rawOffset + 4, zsize);
+                        }
+                        else
+                        {
+                            byte* zlibOut = stackalloc byte[allocSize];
+
+                            fixed (byte* rawIn = rawContents)
+                            {
+                                zsize = DoCompress(rawIn + rawOffset, rawSize, zlibOut, allocSize);
+                            }
+
+                            Marshal.Copy((IntPtr)zlibOut, rawContents, rawOffset + 4, zsize);
+                        }
+
+                        VncUtility.EncodeUInt32BE(rawContents, rawOffset, (uint)zsize);
+
+                        _debugZLibPixelBytesIn += w * h * bpp;
+                        _debugZLibPixelBytesOut += zsize + 4;
+                        AddRegion(region, VncEncoding.Zlib, rawContents, rawOffset, zsize + 4);
+                    }
+                    else
+                    {
+                        _debugRawPixelBytes += rawSize;
+                        AddRegion(region, VncEncoding.Raw, rawContents, rawOffset, rawSize);
+                    }
                 }
-#if DEFLATESTREAM_FLUSH_WORKS
-        if (_clientEncoding.Contains(VncEncoding.Zlib))
-        {
-            _zlibMemoryStream.Position = 0;
-            _zlibMemoryStream.SetLength(0);
-            _zlibMemoryStream.Write(new byte[4], 0, 4);
-
-            if (_zlibDeflater == null)
-            {
-                _zlibMemoryStream.Write(new[] { (byte)120, (byte)218 }, 0, 2);
-                _zlibDeflater = new DeflateStream(_zlibMemoryStream, CompressionMode.Compress, false);
             }
-
-            _zlibDeflater.Write(contents, 0, contents.Length);
-            _zlibDeflater.Flush();
-            contents = _zlibMemoryStream.ToArray();
-
-            VncUtility.EncodeUInt32BE(contents, 0, (uint)(contents.Length - 4));
-            AddRegion(region, VncEncoding.Zlib, contents);
         }
-        else
-#endif
 
-                AddRegion(region, VncEncoding.Raw, rawContents);
-            }
+        unsafe int DoCompress(byte* inData, int inLength, byte* outData, int outLength)
+        {
+            _zlib->next_in = inData;
+            _zlib->avail_in = (uint)inLength;
+            _zlib->next_out = outData;
+            _zlib->avail_out = (uint)outLength;
+            int zerr = ZLib.deflate(_zlib, ZLib.Z_SYNC_FLUSH);
+            VncStream.Require(zerr == ZLib.Z_OK, "ZLib failed.", VncFailureReason.Unknown);
+            VncStream.Require(_zlib->avail_in == 0, "ZLib did not compress all data.", VncFailureReason.Unknown);
+
+            int received = outLength - (int)_zlib->avail_out;
+            VncStream.Require((uint)received <= outLength, "ZLib somehow had extra data.", VncFailureReason.Unknown);
+            return received;
         }
 
         /// <summary>
@@ -720,7 +890,7 @@ namespace RemoteViewing.Vnc.Server
 #if PRINT_DEBUG_BANDWIDTH_STATS
             if (_debugRawPixelBytes > 0 || _debugHexPixelBytesIn > 0 || _debugHexPixelBytesOut > 0)
             {
-                Console.WriteLine(string.Format("Raw: {0}  Hex: {1} -> {2}", _debugRawPixelBytes, _debugHexPixelBytesIn, _debugHexPixelBytesOut));
+                Console.WriteLine(string.Format("Raw: {0}  Hex: {1} -> {2}  ZLib: {3} -> {4}", _debugRawPixelBytes, _debugHexPixelBytesIn, _debugHexPixelBytesOut, _debugZLibPixelBytesIn, _debugZLibPixelBytesOut));
             }
 #endif
 
@@ -747,7 +917,7 @@ namespace RemoteViewing.Vnc.Server
                 {
                     _c.SendRectangle(rectangle.Region);
                     _c.SendUInt32BE((uint)rectangle.Encoding);
-                    _c.Send(rectangle.Contents);
+                    _c.Send(rectangle.Contents, rectangle.ContentsOffset, rectangle.ContentsSize);
                 }
 
                 _fbuRectangles.Clear(); return true;

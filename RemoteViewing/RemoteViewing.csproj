@@ -42,6 +42,12 @@
   <ItemGroup>
     <Compile Include="Utility\AutoClear.cs" />
     <Compile Include="Utility\PeriodicThread.cs" />
+    <Compile Include="Utility\ZLib\adler32.cs" />
+    <Compile Include="Utility\ZLib\deflate.cs" />
+    <Compile Include="Utility\ZLib\deflate_h.cs" />
+    <Compile Include="Utility\ZLib\trees.cs" />
+    <Compile Include="Utility\ZLib\trees_h.cs" />
+    <Compile Include="Utility\ZLib\zlib_h.cs" />
     <Compile Include="Vnc\IVncFramebufferSource.cs" />
     <Compile Include="Vnc\Server\CreatingDesktopEventArgs.cs" />
     <Compile Include="Vnc\Server\FramebufferUpdateRequest.cs" />

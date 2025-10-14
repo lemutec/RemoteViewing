@@ -1,6 +1,9 @@
-1.0.2 (TBD):
+1.1.0 (October 14, 2025):
+  Added support for 8-bit color (2-3-3 RGB) to the VNC server. It's not pretty, but it is bandwidth-efficient.
+  Added Zlib support to the VNC server. Previously RemoteViewing was only useful on a LAN. With this change, it should be useful over the Internet.
   Fixed an occasional crash on exit in the Windows Forms VNC control.
   On 64-bit platforms, the VNC server is now another 25% faster when the desktop is idle.
+  The VNC server now uses a steady amount of RAM, even when updating the screen quickly. As a result, the garbage collector no longer causes CPU spikes.
   
 1.0.1 (October 9, 2025):
   Added (very) basic Hextile support to the VNC server.

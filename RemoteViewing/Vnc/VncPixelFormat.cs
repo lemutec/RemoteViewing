@@ -227,6 +227,8 @@ namespace RemoteViewing.Vnc
 
                     sourceData += sourceStride; targetData += targetStride;
                 }
+
+                return;
             }
             else if (!targetFormat.IsPalettized) // TODO: Implement palettized custom formats, if we need them.
             {
@@ -241,6 +243,8 @@ namespace RemoteViewing.Vnc
                             for (int ix = 0; ix < w; ix++) { byte color = (*sourceDataX0++); *targetDataX0++ = color < paletteEntries.Length ? paletteEntries[color] : 0; }
                             sourceData += sourceStride; targetData += targetStride;
                         }
+
+                        return;
                     }
                 }
                 else if (!sourceFormat.IsPalettized) // TODO: Implement palettized custom formats.
@@ -299,7 +303,50 @@ namespace RemoteViewing.Vnc
 
                         sourceData += sourceStride; targetData += targetStride;
                     }
+
+                    return;
                 }
+            }
+            else
+            {
+                if (sourceFormat.EqualsForCopy(VncPixelFormat.Format32bpp) &&
+                    targetFormat.IsPalettized && targetFormat.BytesPerPixel == 1 && paletteEntries == null)
+                {
+                    // This is the server's normal case. We're going to do 2-3-3 RGB for now.
+                    // We can generalize this later if we need to.
+                    for (int iy = 0; iy < h; iy++)
+                    {
+                        uint* sourceDataX0 = (uint*)sourceData; byte* targetDataX0 = (byte*)targetData;
+
+                        for (int ix = 0; ix < w; ix++)
+                        {
+                            uint s = *sourceDataX0++;
+                            byte t = (byte)(
+                                ((s >> 22) & 0x3) << 6 |
+                                ((s >> 13) & 0x7) << 3 |
+                                ((s >> 5) & 0x7) << 0
+                                );
+                            *targetDataX0++ = t;
+                        }
+
+                        sourceData += sourceStride; targetData += targetStride;
+                    }
+
+                    return;
+                }
+            }
+
+            // Zero this out if we don't support the format. Don't leave in whatever was there before.
+            int tbbp = targetFormat.BytesPerPixel;
+
+            for (int iy = 0; iy < h; iy++)
+            {
+                byte* targetDataX0 = (byte*)targetData;
+
+                int bwidth = w * tbbp;
+                for (int b = 0; b < bwidth; b++) { *targetDataX0 = 0; targetDataX0++; }
+
+                targetData += targetStride;
             }
         }
 
