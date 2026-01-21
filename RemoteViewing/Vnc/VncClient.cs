@@ -1,17 +1,18 @@
 ﻿#region License
+
 /*
 RemoteViewing VNC Client/Server Library for .NET
 Copyright (c) 2013 James F. Bellinger <http://software.seekye.com/remoteviewing>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met: 
+modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer. 
+   list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright notice,
    this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution. 
+   and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -24,6 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
 #endregion
 
 using System;
@@ -71,14 +73,14 @@ namespace RemoteViewing.Vnc
         /// </summary>
         public event EventHandler<RemoteClipboardChangedEventArgs> RemoteClipboardChanged;
 
-        VncStream _c = new VncStream();
-        VncStatisticsHelper _stats = new VncStatisticsHelper();
-        int[] _colorMap;
-        VncClientConnectOptions _options;
-        double _maxUpdateRate;
-        VncPixelFormat _pixelFormat;
-        Version _serverVersion = new Version();
-        Thread _threadMain;
+        private VncStream _c = new VncStream();
+        private VncStatisticsHelper _stats = new VncStatisticsHelper();
+        private int[] _colorMap;
+        private VncClientConnectOptions _options;
+        private double _maxUpdateRate;
+        private VncPixelFormat _pixelFormat;
+        private Version _serverVersion = new Version();
+        private Thread _threadMain;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VncClient"/> class.
@@ -130,7 +132,7 @@ namespace RemoteViewing.Vnc
                 }
             }
         }
-        
+
         /// <summary>
         /// Connects to a VNC server.
         /// </summary>
@@ -203,9 +205,9 @@ namespace RemoteViewing.Vnc
                     switch (command)
                     {
                         case 0:
-                            requester.Signal();
                             HandleFramebufferUpdate();
                             _stats.Update(_c);
+                            requester.Signal();
                             break;
 
                         case 1:
@@ -233,15 +235,12 @@ namespace RemoteViewing.Vnc
             }
             catch (ObjectDisposedException)
             {
-
             }
             catch (IOException)
             {
-
             }
             catch (VncException)
             {
-
             }
 
             requester.Stop();
@@ -253,11 +252,11 @@ namespace RemoteViewing.Vnc
         void NegotiateVersion()
         {
             _serverVersion = _c.ReceiveVersion();
-            VncStream.Require(_serverVersion >= new Version(3, 8),
-                                  "RFB 3.8 not supported by server.",
+            VncStream.Require(_serverVersion >= new Version(3, 7),
+                                  "RFB 3.7 not supported by server.",
                                   VncFailureReason.UnsupportedProtocolVersion);
 
-            _c.SendVersion(new Version(3, 8));
+            _c.SendVersion(new Version(3, 7));
         }
 
         void NegotiateSecurity()
@@ -598,7 +597,7 @@ namespace RemoteViewing.Vnc
 
         /// <summary>
         /// The max rate to request framebuffer updates at, in frames per second.
-        /// 
+        ///
         /// The default is 15.
         /// </summary>
         public double MaxUpdateRate
