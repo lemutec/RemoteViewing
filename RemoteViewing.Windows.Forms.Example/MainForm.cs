@@ -32,7 +32,7 @@ using System;
 using System.Net.Sockets;
 using System.Windows.Forms;
 
-namespace RemoteViewing.Example
+namespace RemoteViewing.Windows.Forms.Example
 {
     public partial class MainForm : Form
     {

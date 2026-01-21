@@ -29,7 +29,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 using System.Windows.Forms;
 
-namespace RemoteViewing.Example
+namespace RemoteViewing.Windows.Forms.Example
 {
     class Program
     {

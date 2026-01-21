@@ -1,6 +1,6 @@
 <Solution>
-  <Project Path="RemoteViewing.Example/RemoteViewing.Example.csproj" Id="d6771918-a3df-4ec6-86df-11e02dda2780" />
+  <Project Path="RemoteViewing/RemoteViewing.csproj" Id="89569346-2c71-4a85-99b9-d3eb71fde87a" />
   <Project Path="RemoteViewing.ServerExample/RemoteViewing.ServerExample.csproj" Id="06464bf4-9691-4391-9783-3891585631d2" />
   <Project Path="RemoteViewing.Windows.Forms/RemoteViewing.Windows.Forms.csproj" Id="4fe8ac04-3825-4cfc-8f1d-4c4064fb5727" />
-  <Project Path="RemoteViewing/RemoteViewing.csproj" Id="89569346-2c71-4a85-99b9-d3eb71fde87a" />
+  <Project Path="RemoteViewing.Windows.Forms.Example/RemoteViewing.Windows.Forms.Example.csproj" Id="d6771918-a3df-4ec6-86df-11e02dda2780" />
 </Solution>
