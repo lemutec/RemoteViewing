@@ -9,7 +9,7 @@ namespace RemoteViewing.Utility
     /// </summary>
     public class PollingSynchronizationContext : SynchronizationContext
     {
-        Queue<Action> _posts = new Queue<Action>();
+        private Queue<Action> _posts = new Queue<Action>();
 
         /// <summary>
         /// Dequeues and runs an action, if one is queued.

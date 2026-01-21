@@ -1,17 +1,18 @@
 ﻿#region License
+
 /*
 RemoteViewing VNC Client/Server Library for .NET
 Copyright (c) 2013, 2025 James F. Bellinger <http://software.seekye.com/remoteviewing>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met: 
+modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer. 
+   list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright notice,
    this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution. 
+   and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -24,6 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
 #endregion
 
 //#define PRINT_DEBUG_BANDWIDTH_STATS
@@ -76,7 +78,7 @@ namespace RemoteViewing.Vnc.Server
         /// Occurs when the framebuffer needs to be captured.
         /// If you have not called <see cref="VncServerSession.SetFramebufferSource"/>, alter the framebuffer
         /// in response to this event.
-        /// 
+        ///
         /// <see cref="VncServerSession.FramebufferUpdateRequestLock"/> is held automatically while this event is raised.
         /// </summary>
         public event EventHandler FramebufferCapturing;
@@ -85,7 +87,7 @@ namespace RemoteViewing.Vnc.Server
         /// Occurs when the framebuffer needs to be updated.
         /// If you do not set <see cref="HandledEventArgs.Handled"/> on <see cref="FramebufferUpdatingEventArgs"/>,
         /// <see cref="VncServerSession"/> will determine the updated regions itself.
-        /// 
+        ///
         /// <see cref="VncServerSession.FramebufferUpdateRequestLock"/> is held automatically while this event is raised.
         /// </summary>
         public event EventHandler<FramebufferUpdatingEventArgs> FramebufferUpdating;
@@ -111,9 +113,9 @@ namespace RemoteViewing.Vnc.Server
         /// </summary>
         public event EventHandler<RemoteClipboardChangedEventArgs> RemoteClipboardChanged;
 
-        long _debugRawPixelBytes;
-        long _debugHexPixelBytesIn, _debugHexPixelBytesOut;
-        long _debugZLibPixelBytesIn, _debugZLibPixelBytesOut;
+        private long _debugRawPixelBytes;
+        private long _debugHexPixelBytesIn, _debugHexPixelBytesOut;
+        private long _debugZLibPixelBytesIn, _debugZLibPixelBytesOut;
 
         struct Rectangle
         {
@@ -123,25 +125,26 @@ namespace RemoteViewing.Vnc.Server
             public int ContentsOffset;
             public int ContentsSize;
         }
-        VncStream _c = new VncStream();
-        VncStatisticsHelper _stats = new VncStatisticsHelper();
-        VncEncoding[] _clientEncoding = new VncEncoding[0];
-        VncPixelFormat _clientPixelFormat;
-        int _clientWidth, _clientHeight;
-        Version _clientVersion = new Version();
-        VncServerSessionOptions _options;
-        VncFramebufferCache _fbuAutoCache;
-        List<Rectangle> _fbuRectangles = new List<Rectangle>();
-        object _fbuSync = new object();
-        IVncFramebufferSource _fbSource;
-        double _maxUpdateRate;
-        Utility.PeriodicThread _requester;
-        object _specialSync = new object();
-        Thread _threadMain;
-        MemoryStream _zlibMemoryStream;
-        bool _zlibHeaderSent;
-        unsafe ZLib.z_stream* _zlib;
-        bool _zlibInit;
+
+        private VncStream _c = new();
+        private VncStatisticsHelper _stats = new();
+        private VncEncoding[] _clientEncoding = [];
+        private VncPixelFormat _clientPixelFormat;
+        private int _clientWidth, _clientHeight;
+        private Version _clientVersion = new();
+        private VncServerSessionOptions _options;
+        private VncFramebufferCache _fbuAutoCache;
+        private List<Rectangle> _fbuRectangles = [];
+        private object _fbuSync = new();
+        private IVncFramebufferSource _fbSource;
+        private double _maxUpdateRate;
+        private Utility.PeriodicThread _requester;
+        private object _specialSync = new();
+        private Thread _threadMain;
+        private MemoryStream _zlibMemoryStream;
+        private bool _zlibHeaderSent;
+        private unsafe ZLib.z_stream* _zlib;
+        private bool _zlibInit;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="VncServerSession"/> class.
@@ -181,7 +184,7 @@ namespace RemoteViewing.Vnc.Server
                     if (_zlibInit)
                     {
                         int zret = ZLib.deflateEnd(_zlib);
-                      //Debug.Assert(zret == ZLib.Z_OK);
+                        //Debug.Assert(zret == ZLib.Z_OK);
                         _zlibInit = false;
                     }
 
@@ -287,11 +290,10 @@ namespace RemoteViewing.Vnc.Server
             }
             catch (ObjectDisposedException)
             {
-
             }
             catch (IOException e)
             {
-
+                _ = e;
             }
             catch (VncException e)
             {
@@ -405,7 +407,7 @@ namespace RemoteViewing.Vnc.Server
             _clientPixelFormat = VncPixelFormat.Format32bpp;
             _clientWidth = Framebuffer.Width; _clientHeight = Framebuffer.Height;
             _fbuAutoCache = null;
-            
+
             _c.SendUInt16BE((ushort)Framebuffer.Width);
             _c.SendUInt16BE((ushort)Framebuffer.Height);
 
@@ -598,7 +600,7 @@ namespace RemoteViewing.Vnc.Server
 
         /// <summary>
         /// Begins a manual framebuffer update.
-        /// 
+        ///
         /// Do not call this method without holding <see cref="VncServerSession.FramebufferUpdateRequestLock"/>.
         /// </summary>
         public void FramebufferManualBeginUpdate()
@@ -621,7 +623,7 @@ namespace RemoteViewing.Vnc.Server
         {
             AddRegion(region, encoding, contents, 0, contents.Length);
         }
-        
+
         void AddRegion(VncRectangle region, VncEncoding encoding, byte[] contents, int contentsOffset, int contentsSize)
         {
             _fbuRectangles.Add(new Rectangle()
@@ -643,7 +645,7 @@ namespace RemoteViewing.Vnc.Server
 
         /// <summary>
         /// Queues an update corresponding to one region of the framebuffer being copied to another.
-        /// 
+        ///
         /// Do not call this method without holding <see cref="VncServerSession.FramebufferUpdateRequestLock"/>.
         /// </summary>
         public void FramebufferManualCopyRegion(VncRectangle target, int sourceX, int sourceY)
@@ -654,7 +656,7 @@ namespace RemoteViewing.Vnc.Server
                 var region = VncRectangle.Union(source, target);
 
                 if (region.Area > source.Area + target.Area) { FramebufferManualInvalidate(new[] { source, target }); }
-                else                                         { FramebufferManualInvalidate(region); }
+                else { FramebufferManualInvalidate(region); }
                 return;
             }
 
@@ -672,7 +674,7 @@ namespace RemoteViewing.Vnc.Server
 
         /// <summary>
         /// Queues an update for the entire framebuffer.
-        /// 
+        ///
         /// Do not call this method without holding <see cref="VncServerSession.FramebufferUpdateRequestLock"/>.
         /// </summary>
         public void FramebufferManualInvalidateAll()
@@ -680,8 +682,8 @@ namespace RemoteViewing.Vnc.Server
             FramebufferManualInvalidate(new VncRectangle(0, 0, Framebuffer.Width, Framebuffer.Height));
         }
 
-        byte[] _fbuUpdateBytes;
-        int _fbuUpdateBytesPtr;
+        private byte[] _fbuUpdateBytes;
+        private int _fbuUpdateBytesPtr;
 
         int AllocUpdateBytes(int count)
         {
@@ -708,7 +710,7 @@ namespace RemoteViewing.Vnc.Server
 
         /// <summary>
         /// Queues an update for the specified region.
-        /// 
+        ///
         /// Do not call this method without holding <see cref="VncServerSession.FramebufferUpdateRequestLock"/>.
         /// </summary>
         /// <param name="region">The region to invalidate.</param>
@@ -792,7 +794,7 @@ namespace RemoteViewing.Vnc.Server
                         return;
                     }
 
-                notHexTile: ;
+                notHexTile:;
                 }
 
                 {
@@ -870,7 +872,7 @@ namespace RemoteViewing.Vnc.Server
 
         /// <summary>
         /// Queues an update for each of the specified regions.
-        /// 
+        ///
         /// Do not call this method without holding <see cref="VncServerSession.FramebufferUpdateRequestLock"/>.
         /// </summary>
         /// <param name="regions">The regions to invalidate.</param>
@@ -882,7 +884,7 @@ namespace RemoteViewing.Vnc.Server
 
         /// <summary>
         /// Completes a manual framebuffer update.
-        /// 
+        ///
         /// Do not call this method without holding <see cref="VncServerSession.FramebufferUpdateRequestLock"/>.
         /// </summary>
         public bool FramebufferManualEndUpdate()
@@ -1109,7 +1111,7 @@ namespace RemoteViewing.Vnc.Server
 
         /// <summary>
         /// The max rate to send framebuffer updates at, in frames per second.
-        /// 
+        ///
         /// The default is 15.
         /// </summary>
         public double MaxUpdateRate

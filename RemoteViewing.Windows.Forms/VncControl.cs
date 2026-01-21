@@ -525,6 +525,8 @@ namespace RemoteViewing.Windows.Forms
         /// Call <see cref="VncClient.Connect(string, int, VncClientConnectOptions)"/>
         /// on it to get things up and running quickly.
         /// </summary>
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public VncClient Client
         {
             get => _client;
@@ -579,11 +581,15 @@ namespace RemoteViewing.Windows.Forms
         /// <summary>
         /// If enabled, clipboard changes on the remote VNC server will alter the local clipboard.
         /// </summary>
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool AllowClipboardSharingFromServer { get; set; }
 
         /// <summary>
         /// If enabled, local clipboard changes will be sent to the remote VNC server.
         /// </summary>
+        [Browsable(false)]
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool AllowClipboardSharingToServer { get; set; }
 
         /// <summary>

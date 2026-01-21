@@ -8,14 +8,14 @@ namespace RemoteViewing.Vnc
 {
     sealed class VncStatisticsHelper
     {
-        const double RateLowPassTimeConstant = 1; // We'll low-pass our measurement with this time constant.
-        const double RateMaxTime = 5; // Beyond this, we will consider the rate 0 until we get the next packet.
+        private const double RateLowPassTimeConstant = 1; // We'll low-pass our measurement with this time constant.
+        private const double RateMaxTime = 5; // Beyond this, we will consider the rate 0 until we get the next packet.
 
-        long _bytesReceived, _bytesSent;
-        double _bytesReceivedPerSecond;
-        double _bytesSentPerSecond;
-        double _cpuTime, _cpuUsage;
-        long _timestamp;
+        private long _bytesReceived, _bytesSent;
+        private double _bytesReceivedPerSecond;
+        private double _bytesSentPerSecond;
+        private double _cpuTime, _cpuUsage;
+        private long _timestamp;
 
         public VncStatisticsHelper()
         {

@@ -1,17 +1,18 @@
 ﻿#region License
+
 /*
 RemoteViewing VNC Client/Server Library for .NET
 Copyright (c) 2013 James F. Bellinger <http://software.seekye.com/remoteviewing>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met: 
+modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer. 
+   list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright notice,
    this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution. 
+   and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -24,6 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
 #endregion
 
 using System;
@@ -35,9 +37,13 @@ namespace RemoteViewing.Vnc
     {
         public static byte[] GenerateChallenge()
         {
+#if NET6_0_OR_GREATER
+            return RandomNumberGenerator.GetBytes(16);
+#else
             var challenge = new byte[16];
             new RNGCryptoServiceProvider().GetBytes(challenge);
             return challenge;
+#endif
         }
 
         public static void GetChallengeResponse(byte[] challenge, char[] password, byte[] response)
@@ -72,7 +78,7 @@ namespace RemoteViewing.Vnc
         }
 
         // See http://www.vidarholen.net/contents/junk/vnc.html.
-        static byte ReverseBits(byte @value)
+        private static byte ReverseBits(byte @value)
         {
             byte outValue = 0;
             for (int i = 0; i < 8; i++)
