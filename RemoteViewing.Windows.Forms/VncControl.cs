@@ -201,6 +201,9 @@ public partial class VncControl : UserControl
 
     private void HandleConnected(object sender, EventArgs e)
     {
+        // Avoid calling when the handle is not created
+        if (!IsHandleCreated) return;
+
         _ = BeginInvoke(() =>
         {
             _expectedClipboard = string.Empty;
@@ -211,6 +214,9 @@ public partial class VncControl : UserControl
 
     private void HandleConnectionFailed(object sender, EventArgs e)
     {
+        // Avoid calling when the handle is not created
+        if (!IsHandleCreated) return;
+
         _ = BeginInvoke(() =>
         {
             ClearInputState();
@@ -220,6 +226,9 @@ public partial class VncControl : UserControl
 
     private void HandleClosed(object sender, EventArgs e)
     {
+         // Avoid calling when the handle is not created
+        if (!IsHandleCreated) return;
+        
         _ = BeginInvoke(() =>
         {
             ClearInputState();
@@ -229,6 +238,9 @@ public partial class VncControl : UserControl
 
     private void HandleFramebufferChanged(object sender, FramebufferChangedEventArgs e)
     {
+        // Avoid calling when the handle is not created
+        if (!IsHandleCreated) return;
+
         _ = BeginInvoke(() =>
         {
             if (DesignMode) { return; }
