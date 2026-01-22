@@ -1,20 +1,14 @@
 <Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <OutputType>WinExe</OutputType>
     <TargetFramework>net48</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <OutputPath>..\bin\</OutputPath>
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="System.Windows.Forms" />
-    <Reference Include="System.Drawing" />
+    <ProjectReference Include="..\RemoteViewing\RemoteViewing.csproj"/>
+    <ProjectReference Include="..\RemoteViewing.Windows.Forms\RemoteViewing.Windows.Forms.csproj"/>
   </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\RemoteViewing.Windows.Forms\RemoteViewing.Windows.Forms.csproj" />
-    <ProjectReference Include="..\RemoteViewing\RemoteViewing.csproj" />
-  </ItemGroup>
-
 </Project>

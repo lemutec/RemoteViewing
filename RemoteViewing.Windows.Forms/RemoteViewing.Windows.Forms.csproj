@@ -1,19 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-
   <PropertyGroup>
     <TargetFrameworks>net462;net472;net48;net5.0-windows;net6.0-windows;net7.0-windows;net8.0-windows;net9.0-windows;net10.0-windows</TargetFrameworks>
     <LangVersion>preview</LangVersion>
     <UseWindowsForms>true</UseWindowsForms>
-    <UseWPF>false</UseWPF>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <OutputPath>..\bin\</OutputPath>
-    <DocumentationFile>..\bin\RemoteViewing.Windows.Forms.XML</DocumentationFile>
+    <DocumentationFile>$(OutputPath)\RemoteViewing.Windows.Forms.XML</DocumentationFile>
     <NoWarn>1701;1702;CA1416;CS1591</NoWarn>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RemoteViewing\RemoteViewing.csproj" />
+    <ProjectReference Include="..\RemoteViewing\RemoteViewing.csproj"/>
   </ItemGroup>
-
 </Project>
