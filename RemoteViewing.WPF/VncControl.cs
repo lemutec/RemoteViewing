@@ -69,6 +69,12 @@ public class VncControl : FrameworkElement
     /// </summary>
     public event EventHandler FramebufferChanged;
 
+    private enum TransformDirection
+    {
+        FromDevice,
+        ToDevice,
+    }
+
     private const int WM_CLIPBOARDUPDATE = 0x31d;
 
     private int _buttons;
@@ -79,6 +85,7 @@ public class VncControl : FrameworkElement
     private VncClient _client;
     private string _expectedClipboard = string.Empty;
     private HashSet<int> _keysyms = [];
+    private float _scaleFactor = 1.0f;
 
     private HwndSource _hwndSource;
 
@@ -100,6 +107,8 @@ public class VncControl : FrameworkElement
 
         Loaded += VncControl_Loaded;
         Unloaded += VncControl_Unloaded;
+        SizeChanged += VncControl_SizeChanged;
+        LayoutUpdated += VncControl_LayoutUpdated;
     }
 
     /// <summary>
@@ -307,11 +316,9 @@ public class VncControl : FrameworkElement
         {
             _bitmap = VncBitmap.CreateBitmap(w, h);
             VncBitmap.CopyFromFramebuffer(framebuffer, new VncRectangle(0, 0, w, h), _bitmap, 0, 0);
-            if (SizeMode == VncControlSizeMode.AutoSize)
-            {
-                Width = w;
-                Height = h;
-            }
+            ScaleFactor = GetScaleFactor(framebuffer);
+            // Note: In AutoSize mode, we do NOT resize the control to match the framebuffer.
+            // The control size is determined by the parent layout, and we scale the image to fit.
             InvalidateVisual();
         }
     }
@@ -389,12 +396,11 @@ public class VncControl : FrameworkElement
 
     private void RaiseFramebufferChanged()
     {
-        var ev = FramebufferChanged;
-        if (ev != null)
+        if (FramebufferChanged != null)
         {
             Dispatcher.BeginInvoke(new Action(() =>
             {
-                ev(this, EventArgs.Empty);
+                FramebufferChanged(this, EventArgs.Empty);
             }));
         }
     }
@@ -463,9 +469,19 @@ public class VncControl : FrameworkElement
     {
         if (_client != null && AllowInput)
         {
-            if (TryScaleMouseLocation(_mouseLocation, out Point scaledLocation))
+            if (SizeMode == VncControlSizeMode.AutoSize)
             {
-                _client.SendPointerEvent((int)scaledLocation.X, (int)scaledLocation.Y, _buttons);
+                // AutoResize mode: use transformed coordinates
+                var devicePoint = TransformPoint((int)_mouseLocation.X, (int)_mouseLocation.Y, TransformDirection.ToDevice);
+                _client.SendPointerEvent((int)devicePoint.X, (int)devicePoint.Y, _buttons);
+            }
+            else
+            {
+                // Original mode: use scaled coordinates
+                if (TryScaleMouseLocation(_mouseLocation, out Point scaledLocation))
+                {
+                    _client.SendPointerEvent((int)scaledLocation.X, (int)scaledLocation.Y, _buttons);
+                }
             }
         }
     }
@@ -636,20 +652,91 @@ public class VncControl : FrameworkElement
         return true;
     }
 
+    private float GetScaleFactor(VncFramebuffer framebuffer)
+    {
+        if (framebuffer == null)
+        {
+            return 1.0f;
+        }
+
+        return GetScaleFactor(framebuffer.Width, framebuffer.Height, RenderSize.Width, RenderSize.Height);
+    }
+
+    private float GetScaleFactor(int remoteWidth, int remoteHeight, double controlWidth, double controlHeight)
+    {
+        if (remoteWidth <= 0 || remoteHeight <= 0 || controlWidth <= 0 || controlHeight <= 0)
+        {
+            return 1.0f;
+        }
+
+        var widthScaleFactor = (float)(controlWidth / remoteWidth);
+        var heightScaleFactor = (float)(controlHeight / remoteHeight);
+        var scaleFactor = Math.Min(widthScaleFactor, heightScaleFactor);
+        return scaleFactor;
+    }
+
+    private Point TransformPoint(int x, int y, TransformDirection direction)
+    {
+        var scaleFactor = ScaleFactor;
+        if (scaleFactor >= 1.0f)
+        {
+            return new Point(x, y);
+        }
+
+        scaleFactor = direction == TransformDirection.ToDevice ? 1.0f / scaleFactor : scaleFactor;
+
+        return new Point((int)(x * scaleFactor), (int)(y * scaleFactor));
+    }
+
     protected override void OnRender(DrawingContext drawingContext)
     {
         base.OnRender(drawingContext);
+
+        // Update ScaleFactor if needed
+        if (!DesignerProperties.GetIsInDesignMode(this) && _client?.Framebuffer != null && RenderSize.Width > 0 && RenderSize.Height > 0)
+        {
+            var newScaleFactor = GetScaleFactor(_client.Framebuffer);
+            if (Math.Abs(newScaleFactor - ScaleFactor) > 0.001f)
+            {
+                ScaleFactor = newScaleFactor;
+            }
+        }
 
         // Draw background
         drawingContext.DrawRectangle(Brushes.Black, null, new Rect(0, 0, ActualWidth, ActualHeight));
 
         if (!DesignerProperties.GetIsInDesignMode(this))
         {
-            if (TryComputeDestinationBounds(out Rect dst))
+            if (_bitmap == null)
             {
-                // Use high quality scaling
-                RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.HighQuality);
-                drawingContext.DrawImage(_bitmap, dst);
+                return;
+            }
+
+            if (SizeMode == VncControlSizeMode.AutoSize)
+            {
+                // AutoResize rendering mode
+                var scaleFactor = ScaleFactor;
+                if (scaleFactor < 1.0f)
+                {
+                    var scaleTransform = new ScaleTransform(scaleFactor, scaleFactor);
+                    drawingContext.PushTransform(scaleTransform);
+                    drawingContext.DrawImage(_bitmap, new Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
+                    drawingContext.Pop();
+                }
+                else
+                {
+                    drawingContext.DrawImage(_bitmap, new Rect(0, 0, _bitmap.PixelWidth, _bitmap.PixelHeight));
+                }
+            }
+            else
+            {
+                // Original rendering mode with scaling and interpolation
+                if (TryComputeDestinationBounds(out Rect dst))
+                {
+                    // Use high quality scaling
+                    RenderOptions.SetBitmapScalingMode(this, BitmapScalingMode.HighQuality);
+                    drawingContext.DrawImage(_bitmap, dst);
+                }
             }
         }
     }
@@ -658,9 +745,32 @@ public class VncControl : FrameworkElement
     {
         base.OnRenderSizeChanged(sizeInfo);
 
-        if (!DesignerProperties.GetIsInDesignMode(this))
+        if (!DesignerProperties.GetIsInDesignMode(this) && _client?.Framebuffer != null && RenderSize.Width > 0 && RenderSize.Height > 0)
         {
+            ScaleFactor = GetScaleFactor(_client.Framebuffer);
             InvalidateVisual();
+        }
+    }
+
+    private void VncControl_SizeChanged(object sender, SizeChangedEventArgs e)
+    {
+        if (!DesignerProperties.GetIsInDesignMode(this) && _client?.Framebuffer != null && RenderSize.Width > 0 && RenderSize.Height > 0)
+        {
+            ScaleFactor = GetScaleFactor(_client.Framebuffer);
+            InvalidateVisual();
+        }
+    }
+
+    private void VncControl_LayoutUpdated(object sender, EventArgs e)
+    {
+        if (!DesignerProperties.GetIsInDesignMode(this) && _client?.Framebuffer != null && RenderSize.Width > 0 && RenderSize.Height > 0)
+        {
+            var newScaleFactor = GetScaleFactor(_client.Framebuffer);
+            if (Math.Abs(newScaleFactor - ScaleFactor) > 0.001f)
+            {
+                ScaleFactor = newScaleFactor;
+                InvalidateVisual();
+            }
         }
     }
 
@@ -834,5 +944,11 @@ public class VncControl : FrameworkElement
     ///
     /// By default, this is <see cref="VncControlSizeMode.AutoSize"/>.
     /// </summary>
-    public VncControlSizeMode SizeMode { get; set; }
+    public VncControlSizeMode SizeMode { get; set; } = VncControlSizeMode.AutoSize;
+
+    private float ScaleFactor
+    {
+        get => _scaleFactor;
+        set => _scaleFactor = value;
+    }
 }

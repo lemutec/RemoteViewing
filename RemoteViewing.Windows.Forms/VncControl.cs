@@ -189,7 +189,8 @@ public partial class VncControl : UserControl
             _bitmap = new Bitmap(w, h, PixelFormat.Format32bppRgb);
             VncBitmap.CopyFromFramebuffer(framebuffer, new VncRectangle(0, 0, w, h), _bitmap, 0, 0);
             ScaleFactor = GetScaleFactor(framebuffer);
-            if (SizeMode == VncControlSizeMode.AutoSize) { ClientSize = new Size(w, h); }
+            // Note: In AutoSize mode, we do NOT resize the control to match the framebuffer.
+            // The control size is determined by the parent layout, and we scale the image to fit.
             Invalidate();
         }
     }
@@ -570,7 +571,7 @@ public partial class VncControl : UserControl
         var widthScaleFactor = (float)controlWidth / remoteWidth;
         var heightScaleFactor = (float)controlHeight / remoteHeight;
         var scaleFactor = Math.Min(widthScaleFactor, heightScaleFactor);
-        return scaleFactor > 1.0f ? 1.0f : scaleFactor;
+        return scaleFactor;
     }
 
     private Rectangle Transform(Rectangle rectangle, TransformDirection direction)
