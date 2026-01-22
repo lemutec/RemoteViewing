@@ -28,39 +28,30 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #endregion
 
-namespace RemoteViewing.Vnc.Server
+namespace RemoteViewing.Vnc.Server;
+
+/// <summary>
+/// Stores information about an update request from the client.
+/// </summary>
+public sealed class FramebufferUpdateRequest
 {
     /// <summary>
-    /// Stores information about an update request from the client.
+    /// Initializes a new instance of the <see cref="FramebufferUpdateRequest"/> class.
     /// </summary>
-    public sealed class FramebufferUpdateRequest
+    /// <param name="incremental">Whether an incremental update is desired.</param>
+    /// <param name="region">The region to update.</param>
+    public FramebufferUpdateRequest(bool incremental, VncRectangle region)
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FramebufferUpdateRequest"/> class.
-        /// </summary>
-        /// <param name="incremental">Whether an incremental update is desired.</param>
-        /// <param name="region">The region to update.</param>
-        public FramebufferUpdateRequest(bool incremental, VncRectangle region)
-        {
-            Incremental = incremental; Region = region;
-        }
-
-        /// <summary>
-        /// Whether an incremental update is desired.
-        /// </summary>
-        public bool Incremental
-        {
-            get;
-            private set;
-        }
-
-        /// <summary>
-        /// The region to update.
-        /// </summary>
-        public VncRectangle Region
-        {
-            get;
-            private set;
-        }
+        Incremental = incremental; Region = region;
     }
+
+    /// <summary>
+    /// Whether an incremental update is desired.
+    /// </summary>
+    public bool Incremental { get; private set; }
+
+    /// <summary>
+    /// The region to update.
+    /// </summary>
+    public VncRectangle Region { get; private set; }
 }

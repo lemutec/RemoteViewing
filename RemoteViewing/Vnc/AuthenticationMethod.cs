@@ -28,21 +28,20 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #endregion
 
-namespace RemoteViewing.Vnc
+namespace RemoteViewing.Vnc;
+
+/// <summary>
+/// Supported authentication methods.
+/// </summary>
+public enum AuthenticationMethod
 {
     /// <summary>
-    /// Supported authentication methods.
+    /// No authentication is performed.
     /// </summary>
-    public enum AuthenticationMethod
-    {
-        /// <summary>
-        /// No authentication is performed.
-        /// </summary>
-        None = 1,
+    None = 1,
 
-        /// <summary>
-        /// A password is used.
-        /// </summary>
-        Password = 2
-    }
+    /// <summary>
+    /// A password is used.
+    /// </summary>
+    Password = 2
 }

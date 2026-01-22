@@ -30,33 +30,28 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System;
 
-namespace RemoteViewing.Vnc.Server
+namespace RemoteViewing.Vnc.Server;
+
+/// <summary>
+/// Provides data for the <see cref="VncServerSession.CreatingDesktop"/> event.
+/// </summary>
+public class CreatingDesktopEventArgs : EventArgs
 {
     /// <summary>
-    /// Provides data for the <see cref="VncServerSession.CreatingDesktop"/> event.
+    /// Initializes a new instance of the <see cref="CreatingDesktopEventArgs"/> class.
     /// </summary>
-    public class CreatingDesktopEventArgs : EventArgs
+    /// <param name="shareDesktop">
+    ///     <c>true</c> if the client will share the desktop with other currently-connected clients.
+    ///     <c>false</c> if the client is asking for exclusive access to the desktop.
+    /// </param>
+    public CreatingDesktopEventArgs(bool shareDesktop)
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="CreatingDesktopEventArgs"/> class.
-        /// </summary>
-        /// <param name="shareDesktop">
-        ///     <c>true</c> if the client will share the desktop with other currently-connected clients.
-        ///     <c>false</c> if the client is asking for exclusive access to the desktop.
-        /// </param>
-        public CreatingDesktopEventArgs(bool shareDesktop)
-        {
-            ShareDesktop = shareDesktop;
-        }
-
-        /// <summary>
-        /// <c>true</c> if the client will share the desktop with other currently-connected clients.
-        /// <c>false</c> if the client is asking for exclusive access to the desktop.
-        /// </summary>
-        public bool ShareDesktop
-        {
-            get;
-            private set;
-        }
+        ShareDesktop = shareDesktop;
     }
+
+    /// <summary>
+    /// <c>true</c> if the client will share the desktop with other currently-connected clients.
+    /// <c>false</c> if the client is asking for exclusive access to the desktop.
+    /// </summary>
+    public bool ShareDesktop { get; private set; }
 }

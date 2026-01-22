@@ -31,88 +31,79 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 using System.Linq;
 
-namespace RemoteViewing.Vnc.Server
+namespace RemoteViewing.Vnc.Server;
+
+/// <summary>
+/// Provides data for the <see cref="VncServerSession.PasswordProvided"/> event.
+/// </summary>
+public sealed class PasswordProvidedEventArgs : EventArgs
 {
+    private byte[] _challenge, _response;
+
     /// <summary>
-    /// Provides data for the <see cref="VncServerSession.PasswordProvided"/> event.
+    /// Initializes a new instance of the <see cref="PasswordProvidedEventArgs"/> class.
     /// </summary>
-    public sealed class PasswordProvidedEventArgs : EventArgs
+    /// <param name="challenge">The VNC the server sent.</param>
+    /// <param name="response">The bytes of the response from the client.</param>
+    public PasswordProvidedEventArgs(byte[] challenge, byte[] response)
     {
-        private byte[] _challenge, _response;
+        Throw.If.Null(challenge, "challenge").Null(response, "response");
+        Throw.If.False(challenge.Length == 16, "Challenge must be 16 bytes.");
+        Throw.If.False(response.Length == 16, "Response must be 16 bytes.");
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PasswordProvidedEventArgs"/> class.
-        /// </summary>
-        /// <param name="challenge">The VNC the server sent.</param>
-        /// <param name="response">The bytes of the response from the client.</param>
-        public PasswordProvidedEventArgs(byte[] challenge, byte[] response)
+        _challenge = challenge; _response = response;
+    }
+
+    /// <summary>
+    /// Successfully authenticates the client.
+    /// </summary>
+    /// <returns>Always <c>true</c>.</returns>
+    public bool Accept()
+    {
+        IsAuthenticated = true; return true;
+    }
+
+    /// <summary>
+    /// Authenticates the client, if the password bytes match.
+    /// </summary>
+    /// <param name="password">The bytes of the password.</param>
+    /// <returns><c>true</c> if authentication succeeded.</returns>
+    public bool Accept(byte[] password)
+    {
+        Throw.If.Null(password, "password");
+
+        var response = new byte[16];
+        VncPasswordChallenge.GetChallengeResponse(_challenge, password, response);
+        return Test(response);
+    }
+
+    /// <summary>
+    /// Authenticates the client, if the password characters match.
+    /// </summary>
+    /// <param name="password">The characters of the password.</param>
+    /// <returns><c>true</c> if authentication succeeded.</returns>
+    public bool Accept(char[] password)
+    {
+        Throw.If.Null(password, "password");
+
+        var response = new byte[16];
+        VncPasswordChallenge.GetChallengeResponse(_challenge, password, response);
+        return Test(response);
+    }
+
+    bool Test(byte[] response)
+    {
+        using (new Utility.AutoClear(response))
         {
-            Throw.If.Null(challenge, "challenge").Null(response, "response");
-            Throw.If.False(challenge.Length == 16, "Challenge must be 16 bytes.");
-            Throw.If.False(response.Length == 16, "Response must be 16 bytes.");
-
-            _challenge = challenge; _response = response;
-        }
-
-        /// <summary>
-        /// Successfully authenticates the client.
-        /// </summary>
-        /// <returns>Always <c>true</c>.</returns>
-        public bool Accept()
-        {
-            IsAuthenticated = true; return true;
-        }
-
-        /// <summary>
-        /// Authenticates the client, if the password bytes match.
-        /// </summary>
-        /// <param name="password">The bytes of the password.</param>
-        /// <returns><c>true</c> if authentication succeeded.</returns>
-        public bool Accept(byte[] password)
-        {
-            Throw.If.Null(password, "password");
-
-            var response = new byte[16];
-            VncPasswordChallenge.GetChallengeResponse(_challenge, password, response);
-            return Test(response);
-        }
-
-        /// <summary>
-        /// Authenticates the client, if the password characters match.
-        /// </summary>
-        /// <param name="password">The characters of the password.</param>
-        /// <returns><c>true</c> if authentication succeeded.</returns>
-        public bool Accept(char[] password)
-        {
-            Throw.If.Null(password, "password");
-
-            var response = new byte[16];
-            VncPasswordChallenge.GetChallengeResponse(_challenge, password, response);
-            return Test(response);
-        }
-
-        bool Test(byte[] response)
-        {
-            using (new Utility.AutoClear(response))
-            {
-                if (!_response.SequenceEqual(response)) { return false; }
-                return Accept();
-            }
-        }
-
-        public string AuthenticationFailedMessage
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// <c>true</c> if the client has successfully authenticated.
-        /// </summary>
-        public bool IsAuthenticated
-        {
-            get;
-            private set;
+            if (!_response.SequenceEqual(response)) { return false; }
+            return Accept();
         }
     }
+
+    public string AuthenticationFailedMessage { get; set; }
+
+    /// <summary>
+    /// <c>true</c> if the client has successfully authenticated.
+    /// </summary>
+    public bool IsAuthenticated { get; private set; }
 }

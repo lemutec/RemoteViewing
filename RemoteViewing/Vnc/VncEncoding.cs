@@ -28,15 +28,14 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #endregion
 
-namespace RemoteViewing.Vnc
+namespace RemoteViewing.Vnc;
+
+enum VncEncoding
 {
-    enum VncEncoding
-    {
-        Raw = 0,
-        CopyRect = 1,
-        Hextile = 5,
-        Zlib = 6,
-        PseudoCursor = -239, // TODO: KVM doesn't use this one for me... Find some way to test it...
-        PseudoDesktopSize = -223
-    }
+    Raw = 0,
+    CopyRect = 1,
+    Hextile = 5,
+    Zlib = 6,
+    PseudoCursor = -239, // TODO: KVM doesn't use this one for me... Find some way to test it...
+    PseudoDesktopSize = -223,
 }

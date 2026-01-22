@@ -32,80 +32,81 @@ using System;
 using System.Diagnostics;
 using System.Threading;
 
-namespace RemoteViewing.Utility
+namespace RemoteViewing.Utility;
+
+sealed class PeriodicThread
 {
-    sealed class PeriodicThread
+    private ManualResetEvent _requestExit;
+    private AutoResetEvent _requestUpdate;
+    private Thread _requestThread;
+
+    public void Start(Func<bool> action, Func<double> getUpdateRateFunc, bool useSignal)
     {
-        private ManualResetEvent _requestExit;
-        private AutoResetEvent _requestUpdate;
-        private Thread _requestThread;
+        Throw.If.Null(action, "action").Null(getUpdateRateFunc, "getUpdateRateFunc");
 
-        public void Start(Func<bool> action, Func<double> getUpdateRateFunc, bool useSignal)
+        _requestExit = new ManualResetEvent(false);
+        _requestUpdate = new AutoResetEvent(false);
+        _requestThread = new Thread(() =>
         {
-            Throw.If.Null(action, "action").Null(getUpdateRateFunc, "getUpdateRateFunc");
+            var waitHandles = new WaitHandle[] { _requestUpdate, _requestExit };
 
-            _requestExit = new ManualResetEvent(false);
-            _requestUpdate = new AutoResetEvent(false);
-            _requestThread = new Thread(() =>
+            while (true)
             {
-                var waitHandles = new WaitHandle[] { _requestUpdate, _requestExit };
-
-                while (true)
+                long startTime = Stopwatch.GetTimestamp();
+                if (useSignal && WaitHandle.WaitAny(waitHandles) == 1)
                 {
-                    long startTime = Stopwatch.GetTimestamp();
-                    if (useSignal && WaitHandle.WaitAny(waitHandles) == 1)
-                    {
-                        return;
-                    }
+                    return;
+                }
 
-                    bool didAction;
-                    try
-                    {
-                        didAction = action();
-                    }
-                    catch (Exception)
-                    {
-                        return;
-                    }
+                bool didAction;
+                try
+                {
+                    didAction = action();
+                }
+                catch (Exception)
+                {
+                    return;
+                }
 
-                    var elapsedTime = Math.Max(0, Stopwatch.GetTimestamp() - startTime);
-                    var secondsToWait = 1.0 / getUpdateRateFunc() - (double)elapsedTime / Stopwatch.Frequency;
-                    int timeout = Math.Max(0, Math.Min(60000, (int)Math.Round(1000.0 * secondsToWait)));
-                    if (timeout > 0)
+                var elapsedTime = Math.Max(0, Stopwatch.GetTimestamp() - startTime);
+                var secondsToWait = 1.0 / getUpdateRateFunc() - (double)elapsedTime / Stopwatch.Frequency;
+                int timeout = Math.Max(0, Math.Min(60000, (int)Math.Round(1000.0 * secondsToWait)));
+                if (timeout > 0)
+                {
+                    if (didAction) // Rate limit if true.
                     {
-                        if (didAction) // Rate limit if true.
+                        if (_requestExit.WaitOne(timeout))
                         {
-                            if (_requestExit.WaitOne(timeout))
-                            {
-                                return;
-                            }
+                            return;
                         }
-                        else
+                    }
+                    else
+                    {
+                        if (WaitHandle.WaitAny(waitHandles, timeout) == 1)
                         {
-                            if (WaitHandle.WaitAny(waitHandles, timeout) == 1)
-                            {
-                                return;
-                            }
+                            return;
                         }
                     }
                 }
-            });
-            _requestThread.Name = "RemoteViewing Periodic Thread";
-            _requestThread.IsBackground = true;
-            _requestThread.Start();
-        }
-
-        public void Signal()
+            }
+        })
         {
-            if (_requestUpdate != null) { _requestUpdate.Set(); }
-        }
+            Name = "RemoteViewing Periodic Thread",
+            IsBackground = true,
+        };
+        _requestThread.Start();
+    }
 
-        public void Stop()
-        {
-            if (_requestThread == null) { return; }
+    public void Signal()
+    {
+        if (_requestUpdate != null) { _requestUpdate.Set(); }
+    }
 
-            _requestExit.Set();
-            _requestThread.Join();
-        }
+    public void Stop()
+    {
+        if (_requestThread == null) { return; }
+
+        _requestExit.Set();
+        _requestThread.Join();
     }
 }

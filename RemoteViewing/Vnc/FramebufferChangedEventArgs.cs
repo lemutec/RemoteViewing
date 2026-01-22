@@ -31,44 +31,39 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 
-namespace RemoteViewing.Vnc
+namespace RemoteViewing.Vnc;
+
+/// <summary>
+/// Provides data for the <see cref="VncClient.FramebufferChanged"/> event.
+/// </summary>
+public class FramebufferChangedEventArgs : EventArgs
 {
+    private List<VncRectangle> _rectangles;
+
     /// <summary>
-    /// Provides data for the <see cref="VncClient.FramebufferChanged"/> event.
+    /// Initializes a new instance of the <see cref="FramebufferChangedEventArgs"/> class.
     /// </summary>
-    public class FramebufferChangedEventArgs : EventArgs
+    /// <param name="rectangles">The bounding rectangles of the changed regions.</param>
+    public FramebufferChangedEventArgs(IEnumerable<VncRectangle> rectangles)
     {
-        private List<VncRectangle> _rectangles;
+        Throw.If.Null(rectangles, "rectangles");
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FramebufferChangedEventArgs"/> class.
-        /// </summary>
-        /// <param name="rectangles">The bounding rectangles of the changed regions.</param>
-        public FramebufferChangedEventArgs(IEnumerable<VncRectangle> rectangles)
-        {
-            Throw.If.Null(rectangles, "rectangles");
-
-            _rectangles = rectangles.ToList();
-        }
-
-        /// <summary>
-        /// Gets one of the changed regions.
-        /// </summary>
-        /// <param name="index">The index of the changed region. The first region has an index of 0.</param>
-        /// <returns>A rectangle describing the changed region.</returns>
-        public VncRectangle GetRectangle(int index)
-        {
-            return _rectangles[index];
-        }
-
-        /// <summary>
-        /// The number of changed regions.
-        /// </summary>
-        public int RectangleCount
-        {
-            get { return _rectangles.Count; }
-        }
+        _rectangles = [.. rectangles];
     }
+
+    /// <summary>
+    /// Gets one of the changed regions.
+    /// </summary>
+    /// <param name="index">The index of the changed region. The first region has an index of 0.</param>
+    /// <returns>A rectangle describing the changed region.</returns>
+    public VncRectangle GetRectangle(int index)
+    {
+        return _rectangles[index];
+    }
+
+    /// <summary>
+    /// The number of changed regions.
+    /// </summary>
+    public int RectangleCount => _rectangles.Count;
 }

@@ -1,17 +1,18 @@
 ﻿#region License
+
 /*
 RemoteViewing VNC Client/Server Library for .NET
 Copyright (c) 2013 James F. Bellinger <http://software.seekye.com/remoteviewing>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met: 
+modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer. 
+   list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright notice,
    this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution. 
+   and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -24,6 +25,7 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
 #endregion
 
 using System;
@@ -31,75 +33,74 @@ using System.Drawing;
 using System.Drawing.Imaging;
 using RemoteViewing.Vnc;
 
-namespace RemoteViewing.Windows.Forms
+namespace RemoteViewing.Windows.Forms;
+
+/// <summary>
+/// Helps with Windows Forms bitmap conversion.
+/// </summary>
+public static class VncBitmap
 {
     /// <summary>
-    /// Helps with Windows Forms bitmap conversion.
+    /// Copies a region of a bitmap into the framebuffer.
     /// </summary>
-    public static class VncBitmap
+    /// <param name="source">The bitmap to read.</param>
+    /// <param name="sourceRectangle">The bitmap region to copy.</param>
+    /// <param name="target">The framebuffer to copy into.</param>
+    /// <param name="targetX">The leftmost X coordinate of the framebuffer to draw to.</param>
+    /// <param name="targetY">The topmost Y coordinate of the framebuffer to draw to.</param>
+    public unsafe static void CopyToFramebuffer(Bitmap source, VncRectangle sourceRectangle,
+                                                VncFramebuffer target, int targetX, int targetY)
     {
-        /// <summary>
-        /// Copies a region of a bitmap into the framebuffer.
-        /// </summary>
-        /// <param name="source">The bitmap to read.</param>
-        /// <param name="sourceRectangle">The bitmap region to copy.</param>
-        /// <param name="target">The framebuffer to copy into.</param>
-        /// <param name="targetX">The leftmost X coordinate of the framebuffer to draw to.</param>
-        /// <param name="targetY">The topmost Y coordinate of the framebuffer to draw to.</param>
-        public unsafe static void CopyToFramebuffer(Bitmap source, VncRectangle sourceRectangle,
-                                                    VncFramebuffer target, int targetX, int targetY)
-        {
-            Throw.If.Null(source, "source").Null(target, "target");
-            if (sourceRectangle.IsEmpty) { return; }
+        Throw.If.Null(source, "source").Null(target, "target");
+        if (sourceRectangle.IsEmpty) { return; }
 
-            var winformsRect = new Rectangle(sourceRectangle.X, sourceRectangle.Y, sourceRectangle.Width, sourceRectangle.Height);
-            var data = source.LockBits(winformsRect, ImageLockMode.ReadOnly,
-                // We are going to ignore the alpha channel regardless, so don't bother converting it.
-                // On a 1920x1080 screen, I found that the Argb -> Rgb conversion was taking 20 ms (out of 30 ms) of the capture time...
-                source.PixelFormat == PixelFormat.Format32bppArgb || source.PixelFormat == PixelFormat.Format32bppPArgb
-                ? source.PixelFormat : PixelFormat.Format32bppRgb);
-            try
+        var winformsRect = new Rectangle(sourceRectangle.X, sourceRectangle.Y, sourceRectangle.Width, sourceRectangle.Height);
+        var data = source.LockBits(winformsRect, ImageLockMode.ReadOnly,
+            // We are going to ignore the alpha channel regardless, so don't bother converting it.
+            // On a 1920x1080 screen, I found that the Argb -> Rgb conversion was taking 20 ms (out of 30 ms) of the capture time...
+            source.PixelFormat == PixelFormat.Format32bppArgb || source.PixelFormat == PixelFormat.Format32bppPArgb
+            ? source.PixelFormat : PixelFormat.Format32bppRgb);
+        try
+        {
+            fixed (int* framebufferData = target.GetPixels())
             {
-                fixed (int* framebufferData = target.GetPixels())
-                {
-                    VncPixelFormat.Copy(data.Scan0, data.Stride, new VncPixelFormat(), sourceRectangle,
-                                        (IntPtr)framebufferData, target.Width * 4, VncPixelFormat.Format32bpp, targetX, targetY);
-                }
-            }
-            finally
-            {
-                source.UnlockBits(data);
+                VncPixelFormat.Copy(data.Scan0, data.Stride, new VncPixelFormat(), sourceRectangle,
+                                    (IntPtr)framebufferData, target.Width * 4, VncPixelFormat.Format32bpp, targetX, targetY);
             }
         }
-
-        /// <summary>
-        /// Copies a region of the framebuffer into a bitmap.
-        /// </summary>
-        /// <param name="source">The framebuffer to read.</param>
-        /// <param name="sourceRectangle">The framebuffer region to copy.</param>
-        /// <param name="target">The bitmap to copy into.</param>
-        /// <param name="targetX">The leftmost X coordinate of the bitmap to draw to.</param>
-        /// <param name="targetY">The topmost Y coordinate of the bitmap to draw to.</param>
-        public unsafe static void CopyFromFramebuffer(VncFramebuffer source, VncRectangle sourceRectangle,
-                                                      Bitmap target, int targetX, int targetY)
+        finally
         {
-            Throw.If.Null(source, "source").Null(target, "target");
-            if (sourceRectangle.IsEmpty) { return; }
+            source.UnlockBits(data);
+        }
+    }
 
-            var winformsRect = new Rectangle(targetX, targetY, sourceRectangle.Width, sourceRectangle.Height);
-            var data = target.LockBits(winformsRect, ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
-            try
+    /// <summary>
+    /// Copies a region of the framebuffer into a bitmap.
+    /// </summary>
+    /// <param name="source">The framebuffer to read.</param>
+    /// <param name="sourceRectangle">The framebuffer region to copy.</param>
+    /// <param name="target">The bitmap to copy into.</param>
+    /// <param name="targetX">The leftmost X coordinate of the bitmap to draw to.</param>
+    /// <param name="targetY">The topmost Y coordinate of the bitmap to draw to.</param>
+    public unsafe static void CopyFromFramebuffer(VncFramebuffer source, VncRectangle sourceRectangle,
+                                                  Bitmap target, int targetX, int targetY)
+    {
+        Throw.If.Null(source, "source").Null(target, "target");
+        if (sourceRectangle.IsEmpty) { return; }
+
+        var winformsRect = new Rectangle(targetX, targetY, sourceRectangle.Width, sourceRectangle.Height);
+        var data = target.LockBits(winformsRect, ImageLockMode.WriteOnly, PixelFormat.Format32bppRgb);
+        try
+        {
+            fixed (int* framebufferData = source.GetPixels())
             {
-                fixed (int* framebufferData = source.GetPixels())
-                {
-                    VncPixelFormat.Copy((IntPtr)framebufferData, source.Width * 4, VncPixelFormat.Format32bpp, sourceRectangle,
-                                        data.Scan0, data.Stride, VncPixelFormat.Format32bpp);
-                }
+                VncPixelFormat.Copy((IntPtr)framebufferData, source.Width * 4, VncPixelFormat.Format32bpp, sourceRectangle,
+                                    data.Scan0, data.Stride, VncPixelFormat.Format32bpp);
             }
-            finally
-            {
-                target.UnlockBits(data);
-            }
+        }
+        finally
+        {
+            target.UnlockBits(data);
         }
     }
 }

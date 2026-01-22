@@ -28,74 +28,51 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #endregion
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security;
-using System.Text;
+namespace RemoteViewing.Vnc;
 
-namespace RemoteViewing.Vnc
+/// <summary>
+/// Called when a password is required and <see cref="VncClientConnectOptions.Password"/> is <c>null</c>.
+/// </summary>
+/// <param name="client">The client needing a password.</param>
+/// <returns>The password, or <c>null</c> to not supply one.</returns>
+public delegate char[] PasswordRequiredCallback(VncClient client);
+
+/// <summary>
+/// Specifies options for connecting to a VNC server.
+/// </summary>
+public sealed class VncClientConnectOptions
 {
+    /// <summary>
+    /// Initializes a new instance of the <see cref="VncClientConnectOptions"/> class.
+    /// </summary>
+    public VncClientConnectOptions()
+    {
+        ShareDesktop = true;
+    }
+
+    /// <summary>
+    /// The password to authenticate with, if the server requires one.
+    ///
+    /// If this is <c>null</c> and a password is required, the connection will fail.
+    /// <c>null</c> is different from a zero-character password.
+    ///
+    /// Only the first eight characters of a password are meaningful in
+    /// traditional VNC authentication.
+    /// </summary>
+    public char[] Password { get; set; }
+
     /// <summary>
     /// Called when a password is required and <see cref="VncClientConnectOptions.Password"/> is <c>null</c>.
     /// </summary>
-    /// <param name="client">The client needing a password.</param>
-    /// <returns>The password, or <c>null</c> to not supply one.</returns>
-    public delegate char[] PasswordRequiredCallback(VncClient client);
+    public PasswordRequiredCallback PasswordRequiredCallback { get; set; }
+
+    public VncPixelFormat PixelFormat { get; set; }
 
     /// <summary>
-    /// Specifies options for connecting to a VNC server.
+    /// <c>true</c> to share the desktop with any currently-connected clients.
+    /// <c>false</c> to get exclusive access to the desktop.
+    ///
+    /// This is set to <c>true</c> by default.
     /// </summary>
-    public sealed class VncClientConnectOptions
-    {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="VncClientConnectOptions"/> class.
-        /// </summary>
-        public VncClientConnectOptions()
-        {
-            ShareDesktop = true;
-        }
-
-        /// <summary>
-        /// The password to authenticate with, if the server requires one.
-        ///
-        /// If this is <c>null</c> and a password is required, the connection will fail.
-        /// <c>null</c> is different from a zero-character password.
-        ///
-        /// Only the first eight characters of a password are meaningful in
-        /// traditional VNC authentication.
-        /// </summary>
-        public char[] Password
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// Called when a password is required and <see cref="VncClientConnectOptions.Password"/> is <c>null</c>.
-        /// </summary>
-        public PasswordRequiredCallback PasswordRequiredCallback
-        {
-            get;
-            set;
-        }
-
-        public VncPixelFormat PixelFormat
-        {
-            get;
-            set;
-        }
-
-        /// <summary>
-        /// <c>true</c> to share the desktop with any currently-connected clients.
-        /// <c>false</c> to get exclusive access to the desktop.
-        ///
-        /// This is set to <c>true</c> by default.
-        /// </summary>
-        public bool ShareDesktop
-        {
-            get;
-            set;
-        }
-    }
+    public bool ShareDesktop { get; set; }
 }

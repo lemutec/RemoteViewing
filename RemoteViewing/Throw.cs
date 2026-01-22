@@ -31,70 +31,66 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 using System.Collections.Generic;
 
-namespace RemoteViewing
-{
-    internal sealed class Throw
-    {
-        Throw()
-        {
-        }
+namespace RemoteViewing;
 
-        public static Throw If
-        {
-            get { return null; }
-        }
+internal sealed class Throw
+{
+    Throw()
+    {
     }
 
-    internal static class ThrowExtensions
+    public static Throw If => null;
+}
+
+internal static class ThrowExtensions
+{
+    public static Throw True(this Throw self, bool condition, string paramName)
     {
-        public static Throw True(this Throw self, bool condition, string paramName)
-        {
-            if (condition) { throw new ArgumentException(paramName); }
-            return null;
-        }
+        if (condition) { throw new ArgumentException(paramName); }
+        return null;
+    }
 
-        public static Throw False(this Throw self, bool condition, string paramName)
-        {
-            if (!condition) { throw new ArgumentException(paramName); }
-            return null;
-        }
+    public static Throw False(this Throw self, bool condition, string paramName)
+    {
+        if (!condition) { throw new ArgumentException(paramName); }
+        return null;
+    }
 
-        public static Throw Negative(this Throw self, int value, string paramName)
-        {
-            if (value < 0) { throw new ArgumentOutOfRangeException("paramName"); }
-            return null;
-        }
+    public static Throw Negative(this Throw self, int value, string paramName)
+    {
+        if (value < 0) { throw new ArgumentOutOfRangeException("paramName"); }
+        return null;
+    }
 
-        public static Throw Null<T>(this Throw self, T value)
-        {
-            if (value == null) { throw new ArgumentNullException(); }
-            return null;
-        }
+    public static Throw Null<T>(this Throw self, T value)
+    {
+        if (value == null) { throw new ArgumentNullException(); }
+        return null;
+    }
 
-        public static Throw Null<T>(this Throw self, T value, string paramName)
-        {
-            if (value == null) { throw new ArgumentNullException(paramName); }
-            return null;
-        }
+    public static Throw Null<T>(this Throw self, T value, string paramName)
+    {
+        if (value == null) { throw new ArgumentNullException(paramName); }
+        return null;
+    }
 
-        public static Throw OutOfRange<T>(this Throw self, IList<T> buffer, int offset, int count)
-        {
-            Throw.If.Null(buffer, "buffer");
-            if (offset < 0 || offset > buffer.Count) { throw new ArgumentOutOfRangeException("offset"); }
-            if (count < 0 || count > buffer.Count - offset) { throw new ArgumentOutOfRangeException("count"); }
-            return null;
-        }
+    public static Throw OutOfRange<T>(this Throw self, IList<T> buffer, int offset, int count)
+    {
+        Throw.If.Null(buffer, "buffer");
+        if (offset < 0 || offset > buffer.Count) { throw new ArgumentOutOfRangeException("offset"); }
+        if (count < 0 || count > buffer.Count - offset) { throw new ArgumentOutOfRangeException("count"); }
+        return null;
+    }
 
-        public static Throw VncRequires(this Throw self, bool condition, string message, Vnc.VncFailureReason reason)
-        {
-            if (!condition) { throw new Vnc.VncException(message, reason); }
-            return null;
-        }
+    public static Throw VncRequires(this Throw self, bool condition, string message, Vnc.VncFailureReason reason)
+    {
+        if (!condition) { throw new Vnc.VncException(message, reason); }
+        return null;
+    }
 
-        public static Throw VncSanityCheck(bool condition)
-        {
-            Throw.If.VncRequires(condition, "Sanity check failed.", Vnc.VncFailureReason.SanityCheckFailed);
-            return null;
-        }
+    public static Throw VncSanityCheck(bool condition)
+    {
+        Throw.If.VncRequires(condition, "Sanity check failed.", Vnc.VncFailureReason.SanityCheckFailed);
+        return null;
     }
 }

@@ -28,52 +28,51 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #endregion
 
-namespace RemoteViewing.Vnc
+namespace RemoteViewing.Vnc;
+
+internal static class VncUtility
 {
-    static class VncUtility
+    public static byte[] AllocateScratch(int bytes, ref byte[] scratch)
     {
-        public static byte[] AllocateScratch(int bytes, ref byte[] scratch)
-        {
-            if (scratch.Length < bytes) { scratch = new byte[bytes]; }
-            return scratch;
-        }
+        if (scratch.Length < bytes) { scratch = new byte[bytes]; }
+        return scratch;
+    }
 
-        public static ushort DecodeUInt16BE(byte[] buffer, int offset)
-        {
-            return (ushort)(buffer[offset + 0] << 8 | buffer[offset + 1]);
-        }
+    public static ushort DecodeUInt16BE(byte[] buffer, int offset)
+    {
+        return (ushort)(buffer[offset + 0] << 8 | buffer[offset + 1]);
+    }
 
-        public static byte[] EncodeUInt16BE(ushort value)
-        {
-            var buffer = new byte[2];
-            EncodeUInt16BE(buffer, 0, value);
-            return buffer;
-        }
+    public static byte[] EncodeUInt16BE(ushort value)
+    {
+        var buffer = new byte[2];
+        EncodeUInt16BE(buffer, 0, value);
+        return buffer;
+    }
 
-        public static void EncodeUInt16BE(byte[] buffer, int offset, ushort value)
-        {
-            buffer[offset + 0] = (byte)(value >> 8);
-            buffer[offset + 1] = (byte)value;
-        }
+    public static void EncodeUInt16BE(byte[] buffer, int offset, ushort value)
+    {
+        buffer[offset + 0] = (byte)(value >> 8);
+        buffer[offset + 1] = (byte)value;
+    }
 
-        public static uint DecodeUInt32BE(byte[] buffer, int offset)
-        {
-            return (uint)(buffer[offset + 0] << 24 | buffer[offset + 1] << 16 | buffer[offset + 2] << 8 | buffer[offset + 3]);
-        }
+    public static uint DecodeUInt32BE(byte[] buffer, int offset)
+    {
+        return (uint)(buffer[offset + 0] << 24 | buffer[offset + 1] << 16 | buffer[offset + 2] << 8 | buffer[offset + 3]);
+    }
 
-        public static byte[] EncodeUInt32BE(uint value)
-        {
-            var buffer = new byte[4];
-            EncodeUInt32BE(buffer, 0, value);
-            return buffer;
-        }
+    public static byte[] EncodeUInt32BE(uint value)
+    {
+        var buffer = new byte[4];
+        EncodeUInt32BE(buffer, 0, value);
+        return buffer;
+    }
 
-        public static void EncodeUInt32BE(byte[] buffer, int offset, uint value)
-        {
-            buffer[offset + 0] = (byte)(value >> 24);
-            buffer[offset + 1] = (byte)(value >> 16);
-            buffer[offset + 2] = (byte)(value >> 8);
-            buffer[offset + 3] = (byte)value;
-        }
+    public static void EncodeUInt32BE(byte[] buffer, int offset, uint value)
+    {
+        buffer[offset + 0] = (byte)(value >> 24);
+        buffer[offset + 1] = (byte)(value >> 16);
+        buffer[offset + 2] = (byte)(value >> 8);
+        buffer[offset + 3] = (byte)value;
     }
 }

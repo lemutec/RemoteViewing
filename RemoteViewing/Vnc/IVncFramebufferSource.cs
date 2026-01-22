@@ -28,18 +28,17 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #endregion
 
-namespace RemoteViewing.Vnc
+namespace RemoteViewing.Vnc;
+
+/// <summary>
+/// Provides a framebuffer.
+/// </summary>
+public interface IVncFramebufferSource
 {
     /// <summary>
-    /// Provides a framebuffer.
+    /// Called when a framebuffer update is needed.
+    /// You can use this opportunity to switch framebuffers if desired.
     /// </summary>
-    public interface IVncFramebufferSource
-    {
-        /// <summary>
-        /// Called when a framebuffer update is needed.
-        /// You can use this opportunity to switch framebuffers if desired.
-        /// </summary>
-        /// <returns>A framebuffer.</returns>
-        VncFramebuffer Capture();
-    }
+    /// <returns>A framebuffer.</returns>
+    VncFramebuffer Capture();
 }

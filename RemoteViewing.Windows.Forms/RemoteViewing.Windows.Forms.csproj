@@ -5,7 +5,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DocumentationFile>$(OutputPath)\RemoteViewing.Windows.Forms.XML</DocumentationFile>
+    <DocumentationFile>$(OutputPath)\RemoteViewing.Windows.Forms.xml</DocumentationFile>
     <NoWarn>1701;1702;CA1416;CS1591</NoWarn>
   </PropertyGroup>
 

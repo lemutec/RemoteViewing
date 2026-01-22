@@ -30,22 +30,21 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System;
 
-namespace RemoteViewing.Utility
+namespace RemoteViewing.Utility;
+
+struct AutoClear : IDisposable
 {
-    struct AutoClear : IDisposable
+    private Array _array;
+
+    public AutoClear(Array array)
     {
-        private Array _array;
+        _array = array;
+    }
 
-        public AutoClear(Array array)
-        {
-            _array = array;
-        }
-
-        public void Dispose()
-        {
-            if (_array == null) { return; }
-            Array.Clear(_array, 0, _array.Length);
-            _array = null;
-        }
+    public void Dispose()
+    {
+        if (_array == null) { return; }
+        Array.Clear(_array, 0, _array.Length);
+        _array = null;
     }
 }

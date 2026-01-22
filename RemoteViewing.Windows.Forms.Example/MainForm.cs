@@ -32,115 +32,114 @@ using System;
 using System.Net.Sockets;
 using System.Windows.Forms;
 
-namespace RemoteViewing.Windows.Forms.Example
+namespace RemoteViewing.Windows.Forms.Example;
+
+public partial class MainForm : Form
 {
-    public partial class MainForm : Form
+    public MainForm()
     {
-        public MainForm()
+        InitializeComponent();
+        UpdateTitle();
+    }
+
+    private void btnConnect_Click(object sender, EventArgs e)
+    {
+        if (vncControl.Client.IsConnected)
         {
-            InitializeComponent();
-            UpdateTitle();
+            vncControl.Client.Close();
         }
-
-        private void btnConnect_Click(object sender, EventArgs e)
+        else
         {
-            if (vncControl.Client.IsConnected)
+            var hostname = txtHostname.Text.Trim();
+            if (hostname == string.Empty)
             {
-                vncControl.Client.Close();
+                MessageBox.Show(this, "Hostname isn't set.", "Hostname",
+                    MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
             }
-            else
+
+            int port;
+            if (!int.TryParse(txtPort.Text, out port) || port < 1 || port > 65535)
             {
-                var hostname = txtHostname.Text.Trim();
-                if (hostname == string.Empty)
-                {
-                    MessageBox.Show(this, "Hostname isn't set.", "Hostname",
-                        MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
+                MessageBox.Show(this, "Port must be between 1 and 65535.", "Port",
+                                MessageBoxButtons.OK, MessageBoxIcon.Error);
+                return;
+            }
 
-                int port;
-                if (!int.TryParse(txtPort.Text, out port) || port < 1 || port > 65535)
-                {
-                    MessageBox.Show(this, "Port must be between 1 and 65535.", "Port",
-                                    MessageBoxButtons.OK, MessageBoxIcon.Error);
-                    return;
-                }
+            var options = new Vnc.VncClientConnectOptions();
+            if (txtPassword.Text != string.Empty) { options.Password = txtPassword.Text.ToCharArray(); }
 
-                var options = new Vnc.VncClientConnectOptions();
-                if (txtPassword.Text != string.Empty) { options.Password = txtPassword.Text.ToCharArray(); }
-
+            try
+            {
                 try
                 {
-                    try
-                    {
-                        Cursor = Cursors.WaitCursor;
-                        try { vncControl.Client.Connect(hostname, port, options); }
-                        finally { Cursor = Cursors.Default; }
-                    }
-                    catch (Vnc.VncException ex)
-                    {
-                        MessageBox.Show(this,
-                                        "Connection failed (" + ex.Reason.ToString() + ").",
-                                        "Connect", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-                    catch (SocketException ex)
-                    {
-                        MessageBox.Show(this,
-                                        "Connection failed (" + ex.SocketErrorCode.ToString() + ").",
-                                        "Connect", MessageBoxButtons.OK, MessageBoxIcon.Error);
-                        return;
-                    }
-                    vncControl.Focus();
+                    Cursor = Cursors.WaitCursor;
+                    try { vncControl.Client.Connect(hostname, port, options); }
+                    finally { Cursor = Cursors.Default; }
                 }
-                finally
+                catch (Vnc.VncException ex)
                 {
-                    if (options.Password != null)
-                    {
-                        Array.Clear(options.Password, 0, options.Password.Length);
-                    }
+                    MessageBox.Show(this,
+                                    "Connection failed (" + ex.Reason.ToString() + ").",
+                                    "Connect", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                catch (SocketException ex)
+                {
+                    MessageBox.Show(this,
+                                    "Connection failed (" + ex.SocketErrorCode.ToString() + ").",
+                                    "Connect", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                    return;
+                }
+                vncControl.Focus();
+            }
+            finally
+            {
+                if (options.Password != null)
+                {
+                    Array.Clear(options.Password, 0, options.Password.Length);
                 }
             }
         }
+    }
 
-        private void vncControl_Connected(object sender, EventArgs e)
+    private void vncControl_Connected(object sender, EventArgs e)
+    {
+        btnConnect.Text = "Close";
+    }
+
+    private void vncControl_Closed(object sender, EventArgs e)
+    {
+        btnConnect.Text = "Connect";
+    }
+
+    private void vncControl_ConnectionFailed(object sender, EventArgs e)
+    {
+    }
+
+    private void tmrStatistics_Tick(object sender, EventArgs e)
+    {
+        UpdateTitle();
+    }
+
+    private void UpdateTitle()
+    {
+        string title = "RemoteViewing - Example VNC Client";
+
+        Vnc.VncClientStatistics stats = vncControl.Client.GetStatistics();
+        double recv = stats.BytesReceivedPerSecond;
+        double send = stats.BytesSentPerSecond;
+        int cpu = (int)Math.Round(stats.CpuUsage * 100);
+
+        if (recv / 1024 >= 0.1 || send / 1024 >= 0.1 || cpu > 0)
         {
-            btnConnect.Text = "Close";
+            title += string.Format("- {0} KB/s received, {1} KB/s sent, {2}% CPU"
+                , (recv / 1024).ToString("0.0")
+                , (send / 1024).ToString("0.0")
+                , cpu
+                );
         }
 
-        private void vncControl_Closed(object sender, EventArgs e)
-        {
-            btnConnect.Text = "Connect";
-        }
-
-        private void vncControl_ConnectionFailed(object sender, EventArgs e)
-        {
-        }
-
-        private void tmrStatistics_Tick(object sender, EventArgs e)
-        {
-            UpdateTitle();
-        }
-
-        void UpdateTitle()
-        {
-            string title = "RemoteViewing - Example VNC Client";
-
-            Vnc.VncClientStatistics stats = vncControl.Client.GetStatistics();
-            double recv = stats.BytesReceivedPerSecond;
-            double send = stats.BytesSentPerSecond;
-            int cpu = (int)Math.Round(stats.CpuUsage * 100);
-
-            if (recv / 1024 >= 0.1 || send / 1024 >= 0.1 || cpu > 0)
-            {
-                title += string.Format("- {0} KB/s received, {1} KB/s sent, {2}% CPU"
-                    , (recv / 1024).ToString("0.0")
-                    , (send / 1024).ToString("0.0")
-                    , cpu
-                    );
-            }
-
-            Text = title;
-        }
+        Text = title;
     }
 }

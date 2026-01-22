@@ -2,16 +2,13 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net48</TargetFramework>
+    <LangVersion>preview</LangVersion>
+    <UseWindowsForms>true</UseWindowsForms>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
   </PropertyGroup>
 
   <ItemGroup>
-    <Reference Include="System.Windows.Forms"/>
-    <Reference Include="System.Drawing"/>
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\RemoteViewing.Windows.Forms\RemoteViewing.Windows.Forms.csproj"/>
     <ProjectReference Include="..\RemoteViewing\RemoteViewing.csproj"/>
+    <ProjectReference Include="..\RemoteViewing.Windows.Forms\RemoteViewing.Windows.Forms.csproj"/>
   </ItemGroup>
 </Project>

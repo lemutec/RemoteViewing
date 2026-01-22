@@ -30,53 +30,40 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System;
 
-namespace RemoteViewing.Vnc
+namespace RemoteViewing.Vnc;
+
+/// <summary>
+/// Provides data for the <see cref="Server.VncServerSession.PointerChanged"/> event.
+/// </summary>
+public class PointerChangedEventArgs : EventArgs
 {
     /// <summary>
-    /// Provides data for the <see cref="Server.VncServerSession.PointerChanged"/> event.
+    /// Initializes a new instance of the <see cref="PointerChangedEventArgs"/> class.
     /// </summary>
-    public class PointerChangedEventArgs : EventArgs
+    /// <param name="x">The X coordinate of the mouse.</param>
+    /// <param name="y">The Y coordinate of the mouse.</param>
+    /// <param name="pressedButtons">
+    ///     A bit mask of pressed mouse buttons, in X11 convention: 1 is left, 2 is middle, and 4 is right.
+    ///     Mouse wheel scrolling is treated as a button event: 8 for up and 16 for down.
+    /// </param>
+    public PointerChangedEventArgs(int x, int y, int pressedButtons)
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PointerChangedEventArgs"/> class.
-        /// </summary>
-        /// <param name="x">The X coordinate of the mouse.</param>
-        /// <param name="y">The Y coordinate of the mouse.</param>
-        /// <param name="pressedButtons">
-        ///     A bit mask of pressed mouse buttons, in X11 convention: 1 is left, 2 is middle, and 4 is right.
-        ///     Mouse wheel scrolling is treated as a button event: 8 for up and 16 for down.
-        /// </param>
-        public PointerChangedEventArgs(int x, int y, int pressedButtons)
-        {
-            X = x; Y = y; PressedButtons = pressedButtons;
-        }
-
-        /// <summary>
-        /// The X coordinate of the mouse.
-        /// </summary>
-        public int X
-        {
-            get;
-            private set;
-        }
-
-        /// <summary>
-        /// The Y coordinate of the mouse.
-        /// </summary>
-        public int Y
-        {
-            get;
-            private set;
-        }
-
-        /// <summary>
-        /// A bit mask of pressed mouse buttons, in X11 convention: 1 is left, 2 is middle, and 4 is right.
-        /// Mouse wheel scrolling is treated as a button event: 8 for up and 16 for down.
-        /// </summary>
-        public int PressedButtons
-        {
-            get;
-            private set;
-        }
+        X = x; Y = y; PressedButtons = pressedButtons;
     }
+
+    /// <summary>
+    /// The X coordinate of the mouse.
+    /// </summary>
+    public int X { get; private set; }
+
+    /// <summary>
+    /// The Y coordinate of the mouse.
+    /// </summary>
+    public int Y { get; private set; }
+
+    /// <summary>
+    /// A bit mask of pressed mouse buttons, in X11 convention: 1 is left, 2 is middle, and 4 is right.
+    /// Mouse wheel scrolling is treated as a button event: 8 for up and 16 for down.
+    /// </summary>
+    public int PressedButtons { get; private set; }
 }

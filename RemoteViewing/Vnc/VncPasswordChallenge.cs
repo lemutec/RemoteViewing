@@ -31,61 +31,60 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 using System.Security.Cryptography;
 
-namespace RemoteViewing.Vnc
+namespace RemoteViewing.Vnc;
+
+static class VncPasswordChallenge
 {
-    static class VncPasswordChallenge
+    public static byte[] GenerateChallenge()
     {
-        public static byte[] GenerateChallenge()
-        {
 #if NET6_0_OR_GREATER
-            return RandomNumberGenerator.GetBytes(16);
+        return RandomNumberGenerator.GetBytes(16);
 #else
-            var challenge = new byte[16];
-            new RNGCryptoServiceProvider().GetBytes(challenge);
-            return challenge;
+        var challenge = new byte[16];
+        new RNGCryptoServiceProvider().GetBytes(challenge);
+        return challenge;
 #endif
-        }
+    }
 
-        public static void GetChallengeResponse(byte[] challenge, char[] password, byte[] response)
+    public static void GetChallengeResponse(byte[] challenge, char[] password, byte[] response)
+    {
+        Throw.If.Null(password, "password");
+
+        var passwordBytes = VncStream.EncodeString(password, 0, password.Length);
+        using (new Utility.AutoClear(passwordBytes))
         {
-            Throw.If.Null(password, "password");
+            GetChallengeResponse(challenge, passwordBytes, response);
+        }
+    }
 
-            var passwordBytes = VncStream.EncodeString(password, 0, password.Length);
-            using (new Utility.AutoClear(passwordBytes))
+    public static void GetChallengeResponse(byte[] challenge, byte[] password, byte[] response)
+    {
+        Throw.If.Null(challenge, "challenge").Null(password, "password").Null(response, "response");
+        Throw.If.False(challenge.Length == 16, "Challenge must be 16 bytes.");
+        Throw.If.False(response.Length == 16, "Response must be 16 bytes.");
+
+        var key = new byte[8];
+        using (new Utility.AutoClear(key))
+        {
+            Array.Copy(password, 0, key, 0, Math.Min(password.Length, key.Length));
+            for (int i = 0; i < key.Length; i++) { key[i] = ReverseBits(key[i]); }
+
+            using (var des = new DESCryptoServiceProvider() { Key = key, Mode = CipherMode.ECB })
+            using (var encryptor = des.CreateEncryptor())
             {
-                GetChallengeResponse(challenge, passwordBytes, response);
+                encryptor.TransformBlock(challenge, 0, 16, response, 0);
             }
         }
+    }
 
-        public static void GetChallengeResponse(byte[] challenge, byte[] password, byte[] response)
+    // See http://www.vidarholen.net/contents/junk/vnc.html.
+    private static byte ReverseBits(byte @value)
+    {
+        byte outValue = 0;
+        for (int i = 0; i < 8; i++)
         {
-            Throw.If.Null(challenge, "challenge").Null(password, "password").Null(response, "response");
-            Throw.If.False(challenge.Length == 16, "Challenge must be 16 bytes.");
-            Throw.If.False(response.Length == 16, "Response must be 16 bytes.");
-
-            var key = new byte[8];
-            using (new Utility.AutoClear(key))
-            {
-                Array.Copy(password, 0, key, 0, Math.Min(password.Length, key.Length));
-                for (int i = 0; i < key.Length; i++) { key[i] = ReverseBits(key[i]); }
-
-                using (var des = new DESCryptoServiceProvider() { Key = key, Mode = CipherMode.ECB })
-                using (var encryptor = des.CreateEncryptor())
-                {
-                    encryptor.TransformBlock(challenge, 0, 16, response, 0);
-                }
-            }
+            if (0 != (@value & (1 << i))) { outValue |= (byte)(128 >> i); }
         }
-
-        // See http://www.vidarholen.net/contents/junk/vnc.html.
-        private static byte ReverseBits(byte @value)
-        {
-            byte outValue = 0;
-            for (int i = 0; i < 8; i++)
-            {
-                if (0 != (@value & (1 << i))) { outValue |= (byte)(128 >> i); }
-            }
-            return outValue;
-        }
+        return outValue;
     }
 }

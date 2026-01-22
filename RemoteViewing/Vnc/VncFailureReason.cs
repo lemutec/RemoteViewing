@@ -28,71 +28,65 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #endregion
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+namespace RemoteViewing.Vnc;
 
-namespace RemoteViewing.Vnc
+/// <summary>
+/// Possible reasons a <see cref="VncException"/> is thrown.
+/// </summary>
+public enum VncFailureReason
 {
     /// <summary>
-    /// Possible reasons a <see cref="VncException"/> is thrown.
+    /// Unknown reason.
     /// </summary>
-    public enum VncFailureReason
-    {
-        /// <summary>
-        /// Unknown reason.
-        /// </summary>
-        Unknown,
+    Unknown,
 
-        /// <summary>
-        /// The server isn't a VNC server.
-        /// </summary>
-        WrongKindOfServer,
+    /// <summary>
+    /// The server isn't a VNC server.
+    /// </summary>
+    WrongKindOfServer,
 
-        /// <summary>
-        /// RemoteViewing can't speak the protocol versions this server offers.
-        /// </summary>
-        UnsupportedProtocolVersion,
+    /// <summary>
+    /// RemoteViewing can't speak the protocol versions this server offers.
+    /// </summary>
+    UnsupportedProtocolVersion,
 
-        /// <summary>
-        /// The server offered no authentication methods. This could mean that VNC is temporarily disabled.
-        /// </summary>
-        ServerOfferedNoAuthenticationMethods,
+    /// <summary>
+    /// The server offered no authentication methods. This could mean that VNC is temporarily disabled.
+    /// </summary>
+    ServerOfferedNoAuthenticationMethods,
 
-        /// <summary>
-        /// The server offered no supported authentication methods.
-        /// </summary>
-        NoSupportedAuthenticationMethods,
+    /// <summary>
+    /// The server offered no supported authentication methods.
+    /// </summary>
+    NoSupportedAuthenticationMethods,
 
-        /// <summary>
-        /// A password was required to authenticate but wasn't supplied.
-        /// </summary>
-        PasswordRequired,
+    /// <summary>
+    /// A password was required to authenticate but wasn't supplied.
+    /// </summary>
+    PasswordRequired,
 
-        /// <summary>
-        /// Authentication failed. This could mean you supplied an incorrect password.
-        /// </summary>
-        AuthenticationFailed,
+    /// <summary>
+    /// Authentication failed. This could mean you supplied an incorrect password.
+    /// </summary>
+    AuthenticationFailed,
 
-        /// <summary>
-        /// The server specified a pixel format RemoteViewing doesn't support.
-        /// </summary>
-        UnsupportedPixelFormat,
+    /// <summary>
+    /// The server specified a pixel format RemoteViewing doesn't support.
+    /// </summary>
+    UnsupportedPixelFormat,
 
-        /// <summary>
-        /// A network error occured. The connection may have been lost.
-        /// </summary>
-        NetworkError,
+    /// <summary>
+    /// A network error occured. The connection may have been lost.
+    /// </summary>
+    NetworkError,
 
-        /// <summary>
-        /// The server sent a value that seems unreasonable. This shouldn't happen in normal conditions.
-        /// </summary>
-        SanityCheckFailed,
+    /// <summary>
+    /// The server sent a value that seems unreasonable. This shouldn't happen in normal conditions.
+    /// </summary>
+    SanityCheckFailed,
 
-        /// <summary>
-        /// The server sent an unrecognized protocol element. This shouldn't happen in normal conditions.
-        /// </summary>
-        UnrecognizedProtocolElement
-    }
+    /// <summary>
+    /// The server sent an unrecognized protocol element. This shouldn't happen in normal conditions.
+    /// </summary>
+    UnrecognizedProtocolElement,
 }

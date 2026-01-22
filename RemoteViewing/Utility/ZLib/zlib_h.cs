@@ -77,51 +77,50 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #endregion
 
-namespace RemoteViewing.Utility
+namespace RemoteViewing.Utility;
+
+unsafe static partial class ZLib
 {
-    unsafe static partial class ZLib
-    {
-        /* constants */
+    /* constants */
 
-        public const int Z_NO_FLUSH = 0;
-        public const int Z_PARTIAL_FLUSH = 1;
-        public const int Z_SYNC_FLUSH = 2;
-        public const int Z_FULL_FLUSH = 3;
-        public const int Z_FINISH = 4;
-        const int Z_BLOCK = 5;
-        const int Z_TREES = 6;
-        /* Allowed flush values; see deflate() and inflate() below for details */
+    public const int Z_NO_FLUSH = 0;
+    public const int Z_PARTIAL_FLUSH = 1;
+    public const int Z_SYNC_FLUSH = 2;
+    public const int Z_FULL_FLUSH = 3;
+    public const int Z_FINISH = 4;
+    const int Z_BLOCK = 5;
+    const int Z_TREES = 6;
+    /* Allowed flush values; see deflate() and inflate() below for details */
 
-        public const int Z_OK = 0;
-        public const int Z_STREAM_END = 1;
-        public const int Z_NEED_DICT = 2;
-        public const int Z_ERRNO = (-1);
-        public const int Z_STREAM_ERROR = (-2);
-        public const int Z_DATA_ERROR = (-3);
-        public const int Z_MEM_ERROR = (-4);
-        public const int Z_BUF_ERROR = (-5);
-        const int Z_VERSION_ERROR = (-6);
+    public const int Z_OK = 0;
+    public const int Z_STREAM_END = 1;
+    public const int Z_NEED_DICT = 2;
+    public const int Z_ERRNO = (-1);
+    public const int Z_STREAM_ERROR = (-2);
+    public const int Z_DATA_ERROR = (-3);
+    public const int Z_MEM_ERROR = (-4);
+    public const int Z_BUF_ERROR = (-5);
+    const int Z_VERSION_ERROR = (-6);
 
-        public const int Z_NO_COMPRESSION = 0;
-        public const int Z_BEST_SPEED = 1;
-        public const int Z_BEST_COMPRESSION = 9;
-        public const int Z_DEFAULT_COMPRESSION = (-1);
-        /* compression levels */
+    public const int Z_NO_COMPRESSION = 0;
+    public const int Z_BEST_SPEED = 1;
+    public const int Z_BEST_COMPRESSION = 9;
+    public const int Z_DEFAULT_COMPRESSION = (-1);
+    /* compression levels */
 
-        const int Z_FILTERED = 1;
-        const int Z_HUFFMAN_ONLY = 2;
-        const int Z_RLE = 3;
-        const int Z_FIXED = 4;
-        const int Z_DEFAULT_STRATEGY = 0;
-        /* compression strategy; see deflateInit2() below for details */
+    const int Z_FILTERED = 1;
+    const int Z_HUFFMAN_ONLY = 2;
+    const int Z_RLE = 3;
+    const int Z_FIXED = 4;
+    const int Z_DEFAULT_STRATEGY = 0;
+    /* compression strategy; see deflateInit2() below for details */
 
-        const int Z_BINARY = 0;
-        const int Z_TEXT = 1;
-        const int Z_ASCII = Z_TEXT;   /* for compatibility with 1.2.2 and earlier */
-        const int Z_UNKNOWN = 2;
-        /* Possible values of the data_type field for deflate() */
+    const int Z_BINARY = 0;
+    const int Z_TEXT = 1;
+    const int Z_ASCII = Z_TEXT;   /* for compatibility with 1.2.2 and earlier */
+    const int Z_UNKNOWN = 2;
+    /* Possible values of the data_type field for deflate() */
 
-        const int Z_DEFLATED = 8;
-        /* The deflate compression method (the only one supported in this version) */
-    }
+    const int Z_DEFLATED = 8;
+    /* The deflate compression method (the only one supported in this version) */
 }

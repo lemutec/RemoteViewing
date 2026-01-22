@@ -30,200 +30,266 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System;
 
-namespace RemoteViewing.Vnc
+namespace RemoteViewing.Vnc;
+
+/// <summary>
+/// Describes the low-level arrangement of a framebuffer pixel.
+/// </summary>
+public sealed class VncPixelFormat
 {
-    /// <summary>
-    /// Describes the low-level arrangement of a framebuffer pixel.
-    /// </summary>
-    public sealed class VncPixelFormat
+    private int _bitsPerPixel, _bytesPerPixel, _bitDepth;
+    private int _redBits, _redShift, _greenBits, _greenShift, _blueBits, _blueShift;
+    private bool _isLittleEndian, _isPalettized;
+
+    static VncPixelFormat()
     {
-        private int _bitsPerPixel, _bytesPerPixel, _bitDepth;
-        private int _redBits, _redShift, _greenBits, _greenShift, _blueBits, _blueShift;
-        private bool _isLittleEndian, _isPalettized;
+        Format32bpp = new VncPixelFormat(32, 24, 8, 16, 8, 8, 8, 0);
+        Format8bpp = new VncPixelFormat(8, 24, 8, 16, 8, 8, 8, 0, isPalettized: true);
+    }
 
-        static VncPixelFormat()
+    public static VncPixelFormat Format32bpp { get; private set; }
+
+    public static VncPixelFormat Format8bpp { get; private set; }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="VncPixelFormat"/> class,
+    /// with 8 bits each of red, green, and blue channels.
+    /// </summary>
+    public VncPixelFormat()
+        : this(32, 24, 8, 16, 8, 8, 8, 0)
+    {
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="VncPixelFormat"/> class.
+    /// </summary>
+    /// <param name="bitsPerPixel">The number of bits used to store a pixel. Currently, this must be 8, 16, or 32.</param>
+    /// <param name="bitDepth">The bit depth of the pixel. Currently, this must be 8, 16, 24, or 32.</param>
+    /// <param name="redBits">The number of bits used to represent red.</param>
+    /// <param name="redShift">The number of bits left the red value is shifted.</param>
+    /// <param name="greenBits">The number of bits used to represent green.</param>
+    /// <param name="greenShift">The number of bits left the green value is shifted.</param>
+    /// <param name="blueBits">The number of bits used to represent blue.</param>
+    /// <param name="blueShift">The number of bits left the blue value is shifted.</param>
+    /// <param name="isLittleEndian"><c>true</c> if the pixel is little-endian, or <c>false</c> if it is big-endian.</param>
+    /// <param name="isPalettized"><c>true</c> if the framebuffer stores palette indices, or <c>false</c> if it stores colors.</param>
+    public VncPixelFormat(int bitsPerPixel, int bitDepth,
+                          int redBits, int redShift, int greenBits, int greenShift, int blueBits, int blueShift,
+                          bool isLittleEndian = true, bool isPalettized = false)
+    {
+        // OBSERVATION: bitsPerPixel == 8 && isPalettized crashes Windows UltraVNC Server.
+        Throw.If.False(bitsPerPixel == 8 || bitsPerPixel == 16 || bitsPerPixel == 32, "bitsPerPixel");
+        Throw.If.False(bitDepth == 8 || bitDepth == 16 || bitDepth == 24 || bitDepth == 32, "bitDepth");
+        Throw.If.False((!isPalettized && bitsPerPixel >= bitDepth) || (isPalettized && bitsPerPixel == 8), "bitDepth");
+        _bitsPerPixel = bitsPerPixel; _bytesPerPixel = bitsPerPixel / 8; _bitDepth = bitDepth;
+        _isLittleEndian = isLittleEndian; _isPalettized = isPalettized;
+
+        if (!isPalettized)
         {
-            Format32bpp = new VncPixelFormat(32, 24, 8, 16, 8, 8, 8, 0);
-            Format8bpp = new VncPixelFormat(8, 24, 8, 16, 8, 8, 8, 0, isPalettized: true);
+            Throw.If.False(redBits >= 0 && redShift >= 0 && redBits <= bitDepth && redShift <= bitDepth, "redBits");
+            Throw.If.False(greenBits >= 0 && greenShift >= 0 && greenBits <= bitDepth && greenShift <= bitDepth, "greenBits");
+            Throw.If.False(blueBits >= 0 && blueShift >= 0 && blueBits <= bitDepth && blueShift <= bitDepth, "blueBits");
+
+            _redBits = redBits; _redShift = redShift;
+            _greenBits = greenBits; _greenShift = greenShift;
+            _blueBits = blueBits; _blueShift = blueShift;
         }
+    }
 
-        public static VncPixelFormat Format32bpp
+    /// <inheritdoc />
+    public override bool Equals(object obj)
+    {
+        if (obj is VncPixelFormat format)
         {
-            get;
-            private set;
-        }
-
-        public static VncPixelFormat Format8bpp
-        {
-            get;
-            private set;
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="VncPixelFormat"/> class,
-        /// with 8 bits each of red, green, and blue channels.
-        /// </summary>
-        public VncPixelFormat()
-            : this(32, 24, 8, 16, 8, 8, 8, 0)
-        {
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="VncPixelFormat"/> class.
-        /// </summary>
-        /// <param name="bitsPerPixel">The number of bits used to store a pixel. Currently, this must be 8, 16, or 32.</param>
-        /// <param name="bitDepth">The bit depth of the pixel. Currently, this must be 8, 16, 24, or 32.</param>
-        /// <param name="redBits">The number of bits used to represent red.</param>
-        /// <param name="redShift">The number of bits left the red value is shifted.</param>
-        /// <param name="greenBits">The number of bits used to represent green.</param>
-        /// <param name="greenShift">The number of bits left the green value is shifted.</param>
-        /// <param name="blueBits">The number of bits used to represent blue.</param>
-        /// <param name="blueShift">The number of bits left the blue value is shifted.</param>
-        /// <param name="isLittleEndian"><c>true</c> if the pixel is little-endian, or <c>false</c> if it is big-endian.</param>
-        /// <param name="isPalettized"><c>true</c> if the framebuffer stores palette indices, or <c>false</c> if it stores colors.</param>
-        public VncPixelFormat(int bitsPerPixel, int bitDepth,
-                              int redBits, int redShift, int greenBits, int greenShift, int blueBits, int blueShift,
-                              bool isLittleEndian = true, bool isPalettized = false)
-        {
-            // OBSERVATION: bitsPerPixel == 8 && isPalettized crashes Windows UltraVNC Server.
-            Throw.If.False(bitsPerPixel == 8 || bitsPerPixel == 16 || bitsPerPixel == 32, "bitsPerPixel");
-            Throw.If.False(bitDepth == 8 || bitDepth == 16 || bitDepth == 24 || bitDepth == 32, "bitDepth");
-            Throw.If.False((!isPalettized && bitsPerPixel >= bitDepth) || (isPalettized && bitsPerPixel == 8), "bitDepth");
-            _bitsPerPixel = bitsPerPixel; _bytesPerPixel = bitsPerPixel / 8; _bitDepth = bitDepth;
-            _isLittleEndian = isLittleEndian; _isPalettized = isPalettized;
-
-            if (!isPalettized)
-            {
-                Throw.If.False(redBits >= 0 && redShift >= 0 && redBits <= bitDepth && redShift <= bitDepth, "redBits");
-                Throw.If.False(greenBits >= 0 && greenShift >= 0 && greenBits <= bitDepth && greenShift <= bitDepth, "greenBits");
-                Throw.If.False(blueBits >= 0 && blueShift >= 0 && blueBits <= bitDepth && blueShift <= bitDepth, "blueBits");
-
-                _redBits = redBits; _redShift = redShift;
-                _greenBits = greenBits; _greenShift = greenShift;
-                _blueBits = blueBits; _blueShift = blueShift;
-            }
-        }
-
-        /// <inheritdoc />
-        public override bool Equals(object obj)
-        {
-            var format = obj as VncPixelFormat;
-
-            if (format != null)
-            {
-                if (EqualsForCopy(format) && BitDepth == format.BitDepth)
-                {
-                    return true;
-                }
-            }
-
-            return false;
-        }
-
-        bool EqualsForCopy(VncPixelFormat format)
-        {
-            if (BitsPerPixel == format.BitsPerPixel &&
-                RedBits == format.RedBits && RedShift == format.RedShift &&
-                GreenBits == format.GreenBits && GreenShift == format.GreenShift &&
-                BlueBits == format.BlueBits && BlueShift == format.BlueShift &&
-                IsLittleEndian == format.IsLittleEndian && IsPalettized == format.IsPalettized)
+            if (EqualsForCopy(format) && BitDepth == format.BitDepth)
             {
                 return true;
             }
-
-            return false;
         }
 
-        /// <inheritdoc />
-        public override int GetHashCode()
+        return false;
+    }
+
+    bool EqualsForCopy(VncPixelFormat format)
+    {
+        if (BitsPerPixel == format.BitsPerPixel &&
+            RedBits == format.RedBits && RedShift == format.RedShift &&
+            GreenBits == format.GreenBits && GreenShift == format.GreenShift &&
+            BlueBits == format.BlueBits && BlueShift == format.BlueShift &&
+            IsLittleEndian == format.IsLittleEndian && IsPalettized == format.IsPalettized)
         {
-            return _bitsPerPixel ^ _redBits;
+            return true;
         }
 
-        /// <summary>
-        /// Copies pixels between two byte arrays. A format conversion is performed if necessary.
-        ///
-        /// Be sure to lock <see cref="VncFramebuffer.SyncRoot"/> first to avoid tearing,
-        /// if the connection is active.
-        /// </summary>
-        /// <param name="source">A pointer to the upper-left corner of the source.</param>
-        /// <param name="sourceStride">The offset in the source between one Y coordinate and the next.</param>
-        /// <param name="sourceFormat">The source pixel format.</param>
-        /// <param name="sourceRectangle">The rectangle in the source to decode.</param>
-        /// <param name="target">A pointer to the upper-left corner of the target.</param>
-        /// <param name="targetStride">The offset in the target between one Y coordinate and the next.</param>
-        /// <param name="targetFormat">The target pixel format.</param>
-        /// <param name="targetX">The X coordinate in the target that the leftmost pixel should be placed into.</param>
-        /// <param name="targetY">The Y coordinate in the target that the topmost pixel should be placed into.</param>
-        internal static unsafe void Copy(byte[] source, int sourceStride, VncPixelFormat sourceFormat, VncRectangle sourceRectangle,
-                                         byte[] target, int targetStride, VncPixelFormat targetFormat, int targetX = 0, int targetY = 0)
-        {
-            Throw.If.Null(source, "source").Null(target, "target");
+        return false;
+    }
 
-            fixed (byte* sourcePtr = source)
-            fixed (byte* targetPtr = target)
+    /// <inheritdoc />
+    public override int GetHashCode()
+    {
+        return _bitsPerPixel ^ _redBits;
+    }
+
+    /// <summary>
+    /// Copies pixels between two byte arrays. A format conversion is performed if necessary.
+    ///
+    /// Be sure to lock <see cref="VncFramebuffer.SyncRoot"/> first to avoid tearing,
+    /// if the connection is active.
+    /// </summary>
+    /// <param name="source">A pointer to the upper-left corner of the source.</param>
+    /// <param name="sourceStride">The offset in the source between one Y coordinate and the next.</param>
+    /// <param name="sourceFormat">The source pixel format.</param>
+    /// <param name="sourceRectangle">The rectangle in the source to decode.</param>
+    /// <param name="target">A pointer to the upper-left corner of the target.</param>
+    /// <param name="targetStride">The offset in the target between one Y coordinate and the next.</param>
+    /// <param name="targetFormat">The target pixel format.</param>
+    /// <param name="targetX">The X coordinate in the target that the leftmost pixel should be placed into.</param>
+    /// <param name="targetY">The Y coordinate in the target that the topmost pixel should be placed into.</param>
+    internal static unsafe void Copy(byte[] source, int sourceStride, VncPixelFormat sourceFormat, VncRectangle sourceRectangle,
+                                     byte[] target, int targetStride, VncPixelFormat targetFormat, int targetX = 0, int targetY = 0)
+    {
+        Throw.If.Null(source, "source").Null(target, "target");
+
+        fixed (byte* sourcePtr = source)
+        fixed (byte* targetPtr = target)
+        {
+            Copy((IntPtr)sourcePtr, sourceStride, sourceFormat, sourceRectangle,
+                 (IntPtr)targetPtr, targetStride, targetFormat, targetX, targetY);
+        }
+    }
+
+    // TODO: Support more (any? :-) pixel formats.
+    /// <summary>
+    /// Copies pixels. A format conversion is performed if necessary.
+    ///
+    /// Be sure to lock <see cref="VncFramebuffer.SyncRoot"/> first to avoid tearing,
+    /// if the connection is active.
+    /// </summary>
+    /// <param name="source">A pointer to the upper-left corner of the source.</param>
+    /// <param name="sourceStride">The offset in the source between one Y coordinate and the next.</param>
+    /// <param name="sourceFormat">The source pixel format.</param>
+    /// <param name="sourceRectangle">The rectangle in the source to decode.</param>
+    /// <param name="target">A pointer to the upper-left corner of the target.</param>
+    /// <param name="targetStride">The offset in the target between one Y coordinate and the next.</param>
+    /// <param name="targetFormat">The target pixel format.</param>
+    /// <param name="targetX">The X coordinate in the target that the leftmost pixel should be placed into.</param>
+    /// <param name="targetY">The Y coordinate in the target that the topmost pixel should be placed into.</param>
+    internal unsafe static void Copy(IntPtr source, int sourceStride, VncPixelFormat sourceFormat, VncRectangle sourceRectangle,
+                                     IntPtr target, int targetStride, VncPixelFormat targetFormat, int targetX = 0, int targetY = 0)
+    {
+        Copy(source, sourceStride, sourceFormat, sourceRectangle, target, targetStride, targetFormat, targetX, targetY, null);
+    }
+
+    internal unsafe static void Copy(IntPtr source, int sourceStride, VncPixelFormat sourceFormat, VncRectangle sourceRectangle,
+                                     IntPtr target, int targetStride, VncPixelFormat targetFormat, int targetX, int targetY,
+                                     int[] paletteEntries)
+    {
+        Throw.If.True(source == IntPtr.Zero, "source").True(target == IntPtr.Zero, "target");
+        Throw.If.Null(sourceFormat, "sourceFormat").Null(targetFormat, "targetFormat");
+
+        if (sourceRectangle.IsEmpty) { return; }
+
+        int x = sourceRectangle.X, w = sourceRectangle.Width;
+        int y = sourceRectangle.Y, h = sourceRectangle.Height;
+
+        var sourceData = (byte*)(void*)source + y * sourceStride + x * sourceFormat.BytesPerPixel;
+        var targetData = (byte*)(void*)target + targetY * targetStride + targetX * targetFormat.BytesPerPixel;
+
+        if (sourceFormat.EqualsForCopy(targetFormat))
+        {
+            for (int iy = 0; iy < h; iy++)
             {
-                Copy((IntPtr)sourcePtr, sourceStride, sourceFormat, sourceRectangle,
-                     (IntPtr)targetPtr, targetStride, targetFormat, targetX, targetY);
+                if (sourceFormat.BytesPerPixel == 4)
+                {
+                    uint* sourceDataX0 = (uint*)sourceData, targetDataX0 = (uint*)targetData;
+                    for (int ix = 0; ix < w; ix++) { *targetDataX0++ = (*sourceDataX0++); }
+                }
+                else if (sourceFormat.BytesPerPixel == 2)
+                {
+                    ushort* sourceDataX0 = (ushort*)sourceData, targetDataX0 = (ushort*)targetData;
+                    for (int ix = 0; ix < w; ix++) { *targetDataX0++ = (*sourceDataX0++); }
+                }
+                else
+                {
+                    int bytes = w * sourceFormat.BytesPerPixel;
+                    byte* sourceDataX0 = (byte*)sourceData, targetDataX0 = (byte*)targetData;
+                    for (int ib = 0; ib < bytes; ib++) { *targetDataX0++ = (*sourceDataX0++); }
+                }
+
+                sourceData += sourceStride; targetData += targetStride;
             }
+
+            return;
         }
-
-        // TODO: Support more (any? :-) pixel formats.
-        /// <summary>
-        /// Copies pixels. A format conversion is performed if necessary.
-        ///
-        /// Be sure to lock <see cref="VncFramebuffer.SyncRoot"/> first to avoid tearing,
-        /// if the connection is active.
-        /// </summary>
-        /// <param name="source">A pointer to the upper-left corner of the source.</param>
-        /// <param name="sourceStride">The offset in the source between one Y coordinate and the next.</param>
-        /// <param name="sourceFormat">The source pixel format.</param>
-        /// <param name="sourceRectangle">The rectangle in the source to decode.</param>
-        /// <param name="target">A pointer to the upper-left corner of the target.</param>
-        /// <param name="targetStride">The offset in the target between one Y coordinate and the next.</param>
-        /// <param name="targetFormat">The target pixel format.</param>
-        /// <param name="targetX">The X coordinate in the target that the leftmost pixel should be placed into.</param>
-        /// <param name="targetY">The Y coordinate in the target that the topmost pixel should be placed into.</param>
-        internal unsafe static void Copy(IntPtr source, int sourceStride, VncPixelFormat sourceFormat, VncRectangle sourceRectangle,
-                                         IntPtr target, int targetStride, VncPixelFormat targetFormat, int targetX = 0, int targetY = 0)
+        else if (!targetFormat.IsPalettized) // TODO: Implement palettized custom formats, if we need them.
         {
-            Copy(source, sourceStride, sourceFormat, sourceRectangle, target, targetStride, targetFormat, targetX, targetY, null);
-        }
-
-        internal unsafe static void Copy(IntPtr source, int sourceStride, VncPixelFormat sourceFormat, VncRectangle sourceRectangle,
-                                         IntPtr target, int targetStride, VncPixelFormat targetFormat, int targetX, int targetY,
-                                         int[] paletteEntries)
-        {
-            Throw.If.True(source == IntPtr.Zero, "source").True(target == IntPtr.Zero, "target");
-            Throw.If.Null(sourceFormat, "sourceFormat").Null(targetFormat, "targetFormat");
-
-            if (sourceRectangle.IsEmpty) { return; }
-
-            int x = sourceRectangle.X, w = sourceRectangle.Width;
-            int y = sourceRectangle.Y, h = sourceRectangle.Height;
-
-            var sourceData = (byte*)(void*)source + y * sourceStride + x * sourceFormat.BytesPerPixel;
-            var targetData = (byte*)(void*)target + targetY * targetStride + targetX * targetFormat.BytesPerPixel;
-
-            if (sourceFormat.EqualsForCopy(targetFormat))
+            if (sourceFormat.IsPalettized && sourceFormat.BytesPerPixel == 1 &&
+                targetFormat.EqualsForCopy(VncPixelFormat.Format32bpp))
             {
+                if (paletteEntries != null)
+                {
+                    for (int iy = 0; iy < h; iy++)
+                    {
+                        byte* sourceDataX0 = (byte*)sourceData; int* targetDataX0 = (int*)targetData;
+                        for (int ix = 0; ix < w; ix++) { byte color = (*sourceDataX0++); *targetDataX0++ = color < paletteEntries.Length ? paletteEntries[color] : 0; }
+                        sourceData += sourceStride; targetData += targetStride;
+                    }
+
+                    return;
+                }
+            }
+            else if (!sourceFormat.IsPalettized) // TODO: Implement palettized custom formats.
+            {
+                int srbits = sourceFormat.RedBits;
+                int sgbits = sourceFormat.GreenBits;
+                int sbbits = sourceFormat.BlueBits;
+                int srshift = sourceFormat.RedShift;
+                int sgshift = sourceFormat.GreenShift;
+                int sbshift = sourceFormat.BlueShift;
+                uint srmask = (1u << srbits) - 1;
+                uint sgmask = (1u << sgbits) - 1;
+                uint sbmask = (1u << sbbits) - 1;
+
+                int trbits = targetFormat.RedBits;
+                int tgbits = targetFormat.GreenBits;
+                int tbbits = targetFormat.BlueBits;
+                int trshift = targetFormat.RedShift;
+                int tgshift = targetFormat.GreenShift;
+                int tbshift = targetFormat.BlueShift;
+
                 for (int iy = 0; iy < h; iy++)
                 {
                     if (sourceFormat.BytesPerPixel == 4)
                     {
-                        uint* sourceDataX0 = (uint*)sourceData, targetDataX0 = (uint*)targetData;
-                        for (int ix = 0; ix < w; ix++) { *targetDataX0++ = (*sourceDataX0++); }
+                        uint* sourceDataX0 = (uint*)sourceData; uint* targetDataX0 = (uint*)targetData;
+
+                        for (int ix = 0; ix < w; ix++)
+                        {
+                            uint rgb = *sourceDataX0++;
+                            uint r = ((rgb >> srshift) & srmask) << (32 - srbits);
+                            uint g = ((rgb >> sgshift) & sgmask) << (32 - sgbits);
+                            uint b = ((rgb >> sbshift) & sbmask) << (32 - sbbits);
+                            r >>= (32 - trbits);
+                            g >>= (32 - tgbits);
+                            b >>= (32 - tbbits);
+                            *targetDataX0++ = r << trshift | g << tgshift | b << tbshift;
+                        }
                     }
                     else if (sourceFormat.BytesPerPixel == 2)
                     {
-                        ushort* sourceDataX0 = (ushort*)sourceData, targetDataX0 = (ushort*)targetData;
-                        for (int ix = 0; ix < w; ix++) { *targetDataX0++ = (*sourceDataX0++); }
-                    }
-                    else
-                    {
-                        int bytes = w * sourceFormat.BytesPerPixel;
-                        byte* sourceDataX0 = (byte*)sourceData, targetDataX0 = (byte*)targetData;
-                        for (int ib = 0; ib < bytes; ib++) { *targetDataX0++ = (*sourceDataX0++); }
+                        ushort* sourceDataX0 = (ushort*)sourceData; uint* targetDataX0 = (uint*)targetData;
+
+                        for (int ix = 0; ix < w; ix++)
+                        {
+                            uint rgb = *sourceDataX0++;
+                            uint r = ((rgb >> srshift) & srmask) << (32 - srbits);
+                            uint g = ((rgb >> sgshift) & sgmask) << (32 - sgbits);
+                            uint b = ((rgb >> sbshift) & sbmask) << (32 - sbbits);
+                            r >>= (32 - trbits);
+                            g >>= (32 - tgbits);
+                            b >>= (32 - tbbits);
+                            *targetDataX0++ = r << trshift | g << tgshift | b << tbshift;
+                        }
                     }
 
                     sourceData += sourceStride; targetData += targetStride;
@@ -231,238 +297,147 @@ namespace RemoteViewing.Vnc
 
                 return;
             }
-            else if (!targetFormat.IsPalettized) // TODO: Implement palettized custom formats, if we need them.
+        }
+        else
+        {
+            if (sourceFormat.EqualsForCopy(VncPixelFormat.Format32bpp) &&
+                targetFormat.IsPalettized && targetFormat.BytesPerPixel == 1 && paletteEntries == null)
             {
-                if (sourceFormat.IsPalettized && sourceFormat.BytesPerPixel == 1 &&
-                    targetFormat.EqualsForCopy(VncPixelFormat.Format32bpp))
+                // This is the server's normal case. We're going to do 2-3-3 RGB for now.
+                // We can generalize this later if we need to.
+                for (int iy = 0; iy < h; iy++)
                 {
-                    if (paletteEntries != null)
+                    uint* sourceDataX0 = (uint*)sourceData; byte* targetDataX0 = (byte*)targetData;
+
+                    for (int ix = 0; ix < w; ix++)
                     {
-                        for (int iy = 0; iy < h; iy++)
-                        {
-                            byte* sourceDataX0 = (byte*)sourceData; int* targetDataX0 = (int*)targetData;
-                            for (int ix = 0; ix < w; ix++) { byte color = (*sourceDataX0++); *targetDataX0++ = color < paletteEntries.Length ? paletteEntries[color] : 0; }
-                            sourceData += sourceStride; targetData += targetStride;
-                        }
-
-                        return;
-                    }
-                }
-                else if (!sourceFormat.IsPalettized) // TODO: Implement palettized custom formats.
-                {
-                    int srbits = sourceFormat.RedBits;
-                    int sgbits = sourceFormat.GreenBits;
-                    int sbbits = sourceFormat.BlueBits;
-                    int srshift = sourceFormat.RedShift;
-                    int sgshift = sourceFormat.GreenShift;
-                    int sbshift = sourceFormat.BlueShift;
-                    uint srmask = (1u << srbits) - 1;
-                    uint sgmask = (1u << sgbits) - 1;
-                    uint sbmask = (1u << sbbits) - 1;
-
-                    int trbits = targetFormat.RedBits;
-                    int tgbits = targetFormat.GreenBits;
-                    int tbbits = targetFormat.BlueBits;
-                    int trshift = targetFormat.RedShift;
-                    int tgshift = targetFormat.GreenShift;
-                    int tbshift = targetFormat.BlueShift;
-
-                    for (int iy = 0; iy < h; iy++)
-                    {
-                        if (sourceFormat.BytesPerPixel == 4)
-                        {
-                            uint* sourceDataX0 = (uint*)sourceData; uint* targetDataX0 = (uint*)targetData;
-
-                            for (int ix = 0; ix < w; ix++)
-                            {
-                                uint rgb = *sourceDataX0++;
-                                uint r = ((rgb >> srshift) & srmask) << (32 - srbits);
-                                uint g = ((rgb >> sgshift) & sgmask) << (32 - sgbits);
-                                uint b = ((rgb >> sbshift) & sbmask) << (32 - sbbits);
-                                r >>= (32 - trbits);
-                                g >>= (32 - tgbits);
-                                b >>= (32 - tbbits);
-                                *targetDataX0++ = r << trshift | g << tgshift | b << tbshift;
-                            }
-                        }
-                        else if (sourceFormat.BytesPerPixel == 2)
-                        {
-                            ushort* sourceDataX0 = (ushort*)sourceData; uint* targetDataX0 = (uint*)targetData;
-
-                            for (int ix = 0; ix < w; ix++)
-                            {
-                                uint rgb = *sourceDataX0++;
-                                uint r = ((rgb >> srshift) & srmask) << (32 - srbits);
-                                uint g = ((rgb >> sgshift) & sgmask) << (32 - sgbits);
-                                uint b = ((rgb >> sbshift) & sbmask) << (32 - sbbits);
-                                r >>= (32 - trbits);
-                                g >>= (32 - tgbits);
-                                b >>= (32 - tbbits);
-                                *targetDataX0++ = r << trshift | g << tgshift | b << tbshift;
-                            }
-                        }
-
-                        sourceData += sourceStride; targetData += targetStride;
+                        uint s = *sourceDataX0++;
+                        byte t = (byte)(
+                            ((s >> 22) & 0x3) << 6 |
+                            ((s >> 13) & 0x7) << 3 |
+                            ((s >> 5) & 0x7) << 0
+                            );
+                        *targetDataX0++ = t;
                     }
 
-                    return;
+                    sourceData += sourceStride; targetData += targetStride;
                 }
-            }
-            else
-            {
-                if (sourceFormat.EqualsForCopy(VncPixelFormat.Format32bpp) &&
-                    targetFormat.IsPalettized && targetFormat.BytesPerPixel == 1 && paletteEntries == null)
-                {
-                    // This is the server's normal case. We're going to do 2-3-3 RGB for now.
-                    // We can generalize this later if we need to.
-                    for (int iy = 0; iy < h; iy++)
-                    {
-                        uint* sourceDataX0 = (uint*)sourceData; byte* targetDataX0 = (byte*)targetData;
 
-                        for (int ix = 0; ix < w; ix++)
-                        {
-                            uint s = *sourceDataX0++;
-                            byte t = (byte)(
-                                ((s >> 22) & 0x3) << 6 |
-                                ((s >> 13) & 0x7) << 3 |
-                                ((s >> 5) & 0x7) << 0
-                                );
-                            *targetDataX0++ = t;
-                        }
-
-                        sourceData += sourceStride; targetData += targetStride;
-                    }
-
-                    return;
-                }
-            }
-
-            // Zero this out if we don't support the format. Don't leave in whatever was there before.
-            int tbbp = targetFormat.BytesPerPixel;
-
-            for (int iy = 0; iy < h; iy++)
-            {
-                byte* targetDataX0 = (byte*)targetData;
-
-                int bwidth = w * tbbp;
-                for (int b = 0; b < bwidth; b++) { *targetDataX0 = 0; targetDataX0++; }
-
-                targetData += targetStride;
+                return;
             }
         }
 
-        static int BitsFromMax(int max)
+        // Zero this out if we don't support the format. Don't leave in whatever was there before.
+        int tbbp = targetFormat.BytesPerPixel;
+
+        for (int iy = 0; iy < h; iy++)
         {
-            if (max == 0 || (max & (max + 1)) != 0) { throw new ArgumentException(); }
-            return (int)Math.Round(Math.Log(max + 1) / Math.Log(2));
-        }
+            byte* targetDataX0 = (byte*)targetData;
 
-        internal static VncPixelFormat Decode(byte[] buffer, int offset)
-        {
-            var bitsPerPixel = buffer[offset + 0];
-            var depth = buffer[offset + 1];
-            var isLittleEndian = buffer[offset + 2] == 0;
-            var isPalettized = buffer[offset + 3] == 0;
+            int bwidth = w * tbbp;
+            for (int b = 0; b < bwidth; b++) { *targetDataX0 = 0; targetDataX0++; }
 
-            int redBits = 0, greenBits = 0, blueBits = 0, redShift = 0, greenShift = 0, blueShift = 0;
-            if (!isPalettized)
-            {
-                redBits = BitsFromMax(VncUtility.DecodeUInt16BE(buffer, offset + 4));
-                greenBits = BitsFromMax(VncUtility.DecodeUInt16BE(buffer, offset + 6));
-                blueBits = BitsFromMax(VncUtility.DecodeUInt16BE(buffer, offset + 8));
-                redShift = buffer[offset + 10];
-                greenShift = buffer[offset + 11];
-                blueShift = buffer[offset + 12];
-            }
-
-            return new VncPixelFormat(bitsPerPixel, depth,
-                                      redBits, redShift, greenBits, greenShift, blueBits, blueShift,
-                                      isLittleEndian, isPalettized);
-        }
-
-        internal void Encode(byte[] buffer, int offset)
-        {
-            buffer[offset + 0] = (byte)BitsPerPixel;
-            buffer[offset + 1] = (byte)BitDepth;
-            buffer[offset + 2] = (byte)(IsLittleEndian ? 0 : 1);
-            buffer[offset + 3] = (byte)(IsPalettized ? 0 : 1);
-            VncUtility.EncodeUInt16BE(buffer, offset + 4, (ushort)((1 << RedBits) - 1));
-            VncUtility.EncodeUInt16BE(buffer, offset + 6, (ushort)((1 << GreenBits) - 1));
-            VncUtility.EncodeUInt16BE(buffer, offset + 8, (ushort)((1 << BlueBits) - 1));
-            buffer[offset + 10] = (byte)RedShift;
-            buffer[offset + 11] = (byte)GreenShift;
-            buffer[offset + 12] = (byte)BlueShift;
-        }
-
-        /// <summary>
-        /// The number of bits used to store a pixel.
-        /// </summary>
-        public int BitsPerPixel
-        { get { return _bitsPerPixel; } }
-
-        /// <summary>
-        /// The number of bytes used to store a pixel.
-        /// </summary>
-        public int BytesPerPixel
-        { get { return _bytesPerPixel; } }
-
-        /// <summary>
-        /// The bit depth of the pixel.
-        /// </summary>
-        public int BitDepth
-        { get { return _bitDepth; } }
-
-        /// <summary>
-        /// The number of bits used to represent red.
-        /// </summary>
-        public int RedBits
-        { get { return _redBits; } }
-
-        /// <summary>
-        /// The number of bits left the red value is shifted.
-        /// </summary>
-        public int RedShift
-        { get { return _redShift; } }
-
-        /// <summary>
-        /// The number of bits used to represent green.
-        /// </summary>
-        public int GreenBits
-        { get { return _greenBits; } }
-
-        /// <summary>
-        /// The number of bits left the green value is shifted.
-        /// </summary>
-        public int GreenShift
-        { get { return _greenShift; } }
-
-        /// <summary>
-        /// The number of bits used to represent blue.
-        /// </summary>
-        public int BlueBits
-        { get { return _blueBits; } }
-
-        /// <summary>
-        /// The number of bits left the blue value is shifted.
-        /// </summary>
-        public int BlueShift
-        { get { return _blueShift; } }
-
-        /// <summary>
-        /// <c>true</c> if the pixel is little-endian, or <c>false</c> if it is big-endian.
-        /// </summary>
-        public bool IsLittleEndian
-        { get { return _isLittleEndian; } }
-
-        /// <summary>
-        /// <c>true</c> if the framebuffer stores palette indices, or <c>false</c> if it stores colors.
-        /// </summary>
-        public bool IsPalettized
-        { get { return _isPalettized; } }
-
-        internal static int Size
-        {
-            get { return 16; }
+            targetData += targetStride;
         }
     }
+
+    static int BitsFromMax(int max)
+    {
+        if (max == 0 || (max & (max + 1)) != 0) { throw new ArgumentException(); }
+        return (int)Math.Round(Math.Log(max + 1) / Math.Log(2));
+    }
+
+    internal static VncPixelFormat Decode(byte[] buffer, int offset)
+    {
+        var bitsPerPixel = buffer[offset + 0];
+        var depth = buffer[offset + 1];
+        var isLittleEndian = buffer[offset + 2] == 0;
+        var isPalettized = buffer[offset + 3] == 0;
+
+        int redBits = 0, greenBits = 0, blueBits = 0, redShift = 0, greenShift = 0, blueShift = 0;
+        if (!isPalettized)
+        {
+            redBits = BitsFromMax(VncUtility.DecodeUInt16BE(buffer, offset + 4));
+            greenBits = BitsFromMax(VncUtility.DecodeUInt16BE(buffer, offset + 6));
+            blueBits = BitsFromMax(VncUtility.DecodeUInt16BE(buffer, offset + 8));
+            redShift = buffer[offset + 10];
+            greenShift = buffer[offset + 11];
+            blueShift = buffer[offset + 12];
+        }
+
+        return new VncPixelFormat(bitsPerPixel, depth,
+                                  redBits, redShift, greenBits, greenShift, blueBits, blueShift,
+                                  isLittleEndian, isPalettized);
+    }
+
+    internal void Encode(byte[] buffer, int offset)
+    {
+        buffer[offset + 0] = (byte)BitsPerPixel;
+        buffer[offset + 1] = (byte)BitDepth;
+        buffer[offset + 2] = (byte)(IsLittleEndian ? 0 : 1);
+        buffer[offset + 3] = (byte)(IsPalettized ? 0 : 1);
+        VncUtility.EncodeUInt16BE(buffer, offset + 4, (ushort)((1 << RedBits) - 1));
+        VncUtility.EncodeUInt16BE(buffer, offset + 6, (ushort)((1 << GreenBits) - 1));
+        VncUtility.EncodeUInt16BE(buffer, offset + 8, (ushort)((1 << BlueBits) - 1));
+        buffer[offset + 10] = (byte)RedShift;
+        buffer[offset + 11] = (byte)GreenShift;
+        buffer[offset + 12] = (byte)BlueShift;
+    }
+
+    /// <summary>
+    /// The number of bits used to store a pixel.
+    /// </summary>
+    public int BitsPerPixel => _bitsPerPixel;
+
+    /// <summary>
+    /// The number of bytes used to store a pixel.
+    /// </summary>
+    public int BytesPerPixel => _bytesPerPixel;
+
+    /// <summary>
+    /// The bit depth of the pixel.
+    /// </summary>
+    public int BitDepth => _bitDepth;
+
+    /// <summary>
+    /// The number of bits used to represent red.
+    /// </summary>
+    public int RedBits => _redBits;
+
+    /// <summary>
+    /// The number of bits left the red value is shifted.
+    /// </summary>
+    public int RedShift => _redShift;
+
+    /// <summary>
+    /// The number of bits used to represent green.
+    /// </summary>
+    public int GreenBits => _greenBits;
+
+    /// <summary>
+    /// The number of bits left the green value is shifted.
+    /// </summary>
+    public int GreenShift => _greenShift;
+
+    /// <summary>
+    /// The number of bits used to represent blue.
+    /// </summary>
+    public int BlueBits => _blueBits;
+
+    /// <summary>
+    /// The number of bits left the blue value is shifted.
+    /// </summary>
+    public int BlueShift => _blueShift;
+
+    /// <summary>
+    /// <c>true</c> if the pixel is little-endian, or <c>false</c> if it is big-endian.
+    /// </summary>
+    public bool IsLittleEndian => _isLittleEndian;
+
+    /// <summary>
+    /// <c>true</c> if the framebuffer stores palette indices, or <c>false</c> if it stores colors.
+    /// </summary>
+    public bool IsPalettized => _isPalettized;
+
+    internal static int Size => 16;
 }

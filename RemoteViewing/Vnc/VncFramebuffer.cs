@@ -28,104 +28,82 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #endregion
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+namespace RemoteViewing.Vnc;
 
-namespace RemoteViewing.Vnc
+/// <summary>
+/// Stores pixel data for a VNC session.
+/// </summary>
+public class VncFramebuffer : IVncFramebufferSource
 {
+    private int[] _pixels;
+
     /// <summary>
-    /// Stores pixel data for a VNC session.
+    /// Initializes a new instance of the <see cref="VncFramebuffer"/> class.
     /// </summary>
-    public class VncFramebuffer : IVncFramebufferSource
+    /// <param name="name">The framebuffer name. Many VNC clients set their titlebar to this name.</param>
+    /// <param name="width">The framebuffer width.</param>
+    /// <param name="height">The framebuffer height.</param>
+    public VncFramebuffer(string name, int width, int height)
     {
-        private int[] _pixels;
+        Throw.If.Null(name, "name");
+        Throw.If.Negative(width, "width").Negative(height, "height");
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="VncFramebuffer"/> class.
-        /// </summary>
-        /// <param name="name">The framebuffer name. Many VNC clients set their titlebar to this name.</param>
-        /// <param name="width">The framebuffer width.</param>
-        /// <param name="height">The framebuffer height.</param>
-        public VncFramebuffer(string name, int width, int height)
+        Name = name; Width = width; Height = height;
+        SyncRoot = new object();
+
+        _pixels = new int[Width * Height];
+    }
+
+    /// <summary>
+    /// Sets the color of a single pixel.
+    /// </summary>
+    /// <param name="x">The X coordinate of the pixel.</param>
+    /// <param name="y">The Y coordinate of the pixel.</param>
+    /// <param name="color">The RGB color of the pixel.</param>
+    public void SetPixel(int x, int y, int color)
+    {
+        lock (SyncRoot)
         {
-            Throw.If.Null(name, "name");
-            Throw.If.Negative(width, "width").Negative(height, "height");
+            Throw.If.False((uint)x < (uint)Width, "x");
+            Throw.If.False((uint)y < (uint)Height, "y");
 
-            Name = name; Width = width; Height = height;
-            SyncRoot = new object();
-
-            _pixels = new int[Width * Height];
+            GetPixels()[y * Width + x] = color;
         }
+    }
 
-        /// <summary>
-        /// Sets the color of a single pixel.
-        /// </summary>
-        /// <param name="x">The X coordinate of the pixel.</param>
-        /// <param name="y">The Y coordinate of the pixel.</param>
-        /// <param name="color">The RGB color of the pixel.</param>
-        public void SetPixel(int x, int y, int color)
-        {
-            lock (SyncRoot)
-            {
-                Throw.If.False((uint)x < (uint)Width, "x");
-                Throw.If.False((uint)y < (uint)Height, "y");
+    /// <summary>
+    /// Returns the values underlying this framebuffer.
+    /// </summary>
+    /// <returns>The framebuffer pixels.</returns>
+    public int[] GetPixels()
+    {
+        return _pixels;
+    }
 
-                GetPixels()[y * Width + x] = color;
-            }
-        }
+    /// <summary>
+    /// The framebuffer name. Many VNC clients set their titlebar to this name.
+    /// </summary>
+    public string Name { get; private set; }
 
-        /// <summary>
-        /// Returns the values underlying this framebuffer.
-        /// </summary>
-        /// <returns>The framebuffer pixels.</returns>
-        public int[] GetPixels()
-        {
-            return _pixels;
-        }
+    /// <summary>
+    /// The framebuffer synchronization object.
+    ///
+    /// Lock this before reading the framebuffer to avoid tearing artifacts.
+    /// </summary>
+    public object SyncRoot { get; private set; }
 
-        /// <summary>
-        /// The framebuffer name. Many VNC clients set their titlebar to this name.
-        /// </summary>
-        public string Name
-        {
-            get;
-            private set;
-        }
+    /// <summary>
+    /// The framebuffer width.
+    /// </summary>
+    public int Width { get; private set; }
 
-        /// <summary>
-        /// The framebuffer synchronization object.
-        ///
-        /// Lock this before reading the framebuffer to avoid tearing artifacts.
-        /// </summary>
-        public object SyncRoot
-        {
-            get;
-            private set;
-        }
+    /// <summary>
+    /// The framebuffer height.
+    /// </summary>
+    public int Height { get; private set; }
 
-        /// <summary>
-        /// The framebuffer width.
-        /// </summary>
-        public int Width
-        {
-            get;
-            private set;
-        }
-
-        /// <summary>
-        /// The framebuffer height.
-        /// </summary>
-        public int Height
-        {
-            get;
-            private set;
-        }
-
-        VncFramebuffer IVncFramebufferSource.Capture()
-        {
-            return this;
-        }
+    VncFramebuffer IVncFramebufferSource.Capture()
+    {
+        return this;
     }
 }

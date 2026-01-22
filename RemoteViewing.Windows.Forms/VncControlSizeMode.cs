@@ -1,17 +1,18 @@
 ﻿#region License
+
 /*
 RemoteViewing VNC Client/Server Library for .NET
 Copyright (c) 2016 James F. Bellinger <http://software.seekye.com/remoteviewing>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met: 
+modification, are permitted provided that the following conditions are met:
 
 1. Redistributions of source code must retain the above copyright notice, this
-   list of conditions and the following disclaimer. 
+   list of conditions and the following disclaimer.
 2. Redistributions in binary form must reproduce the above copyright notice,
    this list of conditions and the following disclaimer in the documentation
-   and/or other materials provided with the distribution. 
+   and/or other materials provided with the distribution.
 
 THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
 ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
@@ -24,38 +25,38 @@ ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
+
 #endregion
 
-namespace RemoteViewing.Windows.Forms
+namespace RemoteViewing.Windows.Forms;
+
+/// <summary>
+/// Specifies how the remote screen is positioned and sized in the <see cref="VncControl"/>.
+/// </summary>
+public enum VncControlSizeMode
 {
     /// <summary>
-    /// Specifies how the remote screen is positioned and sized in the <see cref="VncControl"/>.
+    /// The <see cref="VncControl"/> will contain the upper-left portion of the screen.
     /// </summary>
-    public enum VncControlSizeMode
-    {
-        /// <summary>
-        /// The <see cref="VncControl"/> will contain the upper-left portion of the screen.
-        /// </summary>
-        Clip,
+    Clip,
 
-        /// <summary>
-        /// The screen is resized to fit the <see cref="VncControl"/>. The aspect ratio is allowed to be incorrect.
-        /// </summary>
-        Stretch,
+    /// <summary>
+    /// The screen is resized to fit the <see cref="VncControl"/>. The aspect ratio is allowed to be incorrect.
+    /// </summary>
+    Stretch,
 
-        /// <summary>
-        /// The <see cref="VncControl"/> is resized to fit the screen.
-        /// </summary>
-        AutoSize,
+    /// <summary>
+    /// The <see cref="VncControl"/> is resized to fit the screen.
+    /// </summary>
+    AutoSize,
 
-        /// <summary>
-        /// The <see cref="VncControl"/> will contain the center portion of the screen.
-        /// </summary>
-        Center,
+    /// <summary>
+    /// The <see cref="VncControl"/> will contain the center portion of the screen.
+    /// </summary>
+    Center,
 
-        /// <summary>
-        /// The screen is resized to fit the <see cref="VncControl"/>. Correct aspect ratio is maintained.
-        /// </summary>
-        Zoom
-    }
+    /// <summary>
+    /// The screen is resized to fit the <see cref="VncControl"/>. Correct aspect ratio is maintained.
+    /// </summary>
+    Zoom,
 }

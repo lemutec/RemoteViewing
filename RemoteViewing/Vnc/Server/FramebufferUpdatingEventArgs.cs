@@ -30,27 +30,22 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System.ComponentModel;
 
-namespace RemoteViewing.Vnc.Server
+namespace RemoteViewing.Vnc.Server;
+
+/// <summary>
+/// Provides data for the <see cref="VncServerSession.FramebufferUpdating"/> event.
+/// </summary>
+public class FramebufferUpdatingEventArgs : HandledEventArgs
 {
     /// <summary>
-    /// Provides data for the <see cref="VncServerSession.FramebufferUpdating"/> event.
+    /// Initializes a new instance of the <see cref="FramebufferUpdatingEventArgs"/> class.
     /// </summary>
-    public class FramebufferUpdatingEventArgs : HandledEventArgs
+    public FramebufferUpdatingEventArgs()
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="FramebufferUpdatingEventArgs"/> class.
-        /// </summary>
-        public FramebufferUpdatingEventArgs()
-        {
-        }
-
-        /// <summary>
-        /// Set this to <c>true</c> if you send an update in response to this event.
-        /// </summary>
-        public bool SentChanges
-        {
-            get;
-            set;
-        }
     }
+
+    /// <summary>
+    /// Set this to <c>true</c> if you send an update in response to this event.
+    /// </summary>
+    public bool SentChanges { get; set; }
 }

@@ -31,58 +31,57 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 using System.Threading;
 
-namespace RemoteViewing.Utility
+namespace RemoteViewing.Utility;
+
+/// <summary>
+/// Marshals a single call from one thread to another.
+/// </summary>
+public class SynchronizedCall
 {
+    private SendOrPostCallback _callback; private object _state;
+
+    private ManualResetEvent _event = new(false);
+    private Exception _ex;
+
     /// <summary>
-    /// Marshals a single call from one thread to another.
+    /// Initializes a new instance of the <see cref="SynchronizedCall"/> class.
     /// </summary>
-    public class SynchronizedCall
+    /// <param name="callback">The call to marshal.</param>
+    /// <param name="state">The state to provide to the call. <c>null</c> is fine if you don't need to include any state.</param>
+    public SynchronizedCall(SendOrPostCallback callback, object state)
     {
-        private SendOrPostCallback _callback; private object _state;
+        Throw.If.Null(callback, "callback");
 
-        private ManualResetEvent _event = new ManualResetEvent(false);
-        private Exception _ex;
+        _callback = callback; _state = state;
+    }
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="SynchronizedCall"/> class.
-        /// </summary>
-        /// <param name="callback">The call to marshal.</param>
-        /// <param name="state">The state to provide to the call. <c>null</c> is fine if you don't need to include any state.</param>
-        public SynchronizedCall(SendOrPostCallback callback, object state)
+    /// <summary>
+    /// Runs the call in the current thread, and marshals the exception back if one occurs.
+    /// </summary>
+    public void Run()
+    {
+        try
         {
-            Throw.If.Null(callback, "callback");
-
-            _callback = callback; _state = state;
+            _callback(_state);
         }
-
-        /// <summary>
-        /// Runs the call in the current thread, and marshals the exception back if one occurs.
-        /// </summary>
-        public void Run()
+        catch (Exception ex)
         {
-            try
-            {
-                _callback(_state);
-            }
-            catch (Exception ex)
-            {
-                _ex = ex;
-            }
-            finally
-            {
-                _event.Set();
-            }
+            _ex = ex;
         }
-
-        /// <summary>
-        /// Waits for <see cref="SynchronizedCall.Run"/> to complete.
-        /// </summary>
-        public void Wait()
+        finally
         {
-            _event.WaitOne();
-
-            var ex = _ex;
-            if (ex != null) { throw ex; }
+            _event.Set();
         }
+    }
+
+    /// <summary>
+    /// Waits for <see cref="SynchronizedCall.Run"/> to complete.
+    /// </summary>
+    public void Wait()
+    {
+        _event.WaitOne();
+
+        var ex = _ex;
+        if (ex != null) { throw ex; }
     }
 }

@@ -30,29 +30,24 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System;
 
-namespace RemoteViewing.Vnc
+namespace RemoteViewing.Vnc;
+
+/// <summary>
+/// Provides data for the <see cref="VncClient.RemoteClipboardChanged"/> event.
+/// </summary>
+public class RemoteClipboardChangedEventArgs : EventArgs
 {
     /// <summary>
-    /// Provides data for the <see cref="VncClient.RemoteClipboardChanged"/> event.
+    /// Initializes a new instance of the <see cref="RemoteClipboardChangedEventArgs"/> class.
     /// </summary>
-    public class RemoteClipboardChangedEventArgs : EventArgs
+    /// <param name="contents">The contents of the remote clipboard.</param>
+    public RemoteClipboardChangedEventArgs(string contents)
     {
-        /// <summary>
-        /// Initializes a new instance of the <see cref="RemoteClipboardChangedEventArgs"/> class.
-        /// </summary>
-        /// <param name="contents">The contents of the remote clipboard.</param>
-        public RemoteClipboardChangedEventArgs(string contents)
-        {
-            Contents = contents;
-        }
-
-        /// <summary>
-        /// The contents of the remote clipboard.
-        /// </summary>
-        public string Contents
-        {
-            get;
-            private set;
-        }
+        Contents = contents;
     }
+
+    /// <summary>
+    /// The contents of the remote clipboard.
+    /// </summary>
+    public string Contents { get; private set; }
 }

@@ -30,41 +30,36 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System;
 
-namespace RemoteViewing.Vnc
+namespace RemoteViewing.Vnc;
+
+/// <summary>
+/// This exception is thrown when there is a problem with the VNC client-server communication.
+/// </summary>
+public class VncException : Exception
 {
     /// <summary>
-    /// This exception is thrown when there is a problem with the VNC client-server communication.
+    /// Initializes an instance of the <see cref="VncException"/> class.
     /// </summary>
-    public class VncException : Exception
+    public VncException()
+        : this("VNC error.")
     {
-        /// <summary>
-        /// Initializes an instance of the <see cref="VncException"/> class.
-        /// </summary>
-        public VncException()
-            : this("VNC error.")
-        {
-        }
-
-        /// <summary>
-        /// Initializes an instance of the <see cref="VncException"/> class, with a reason specified.
-        /// </summary>
-        /// <param name="message">The error message.</param>
-        /// <param name="reason">The reason the exception was thrown.</param>
-        /// <param name="innerException">The exception that caused this exception to be thrown, or <c>null</c>.</param>
-        public VncException(string message, VncFailureReason reason = VncFailureReason.Unknown,
-                            Exception innerException = null)
-            : base(message, innerException)
-        {
-            Reason = reason;
-        }
-
-        /// <summary>
-        /// The reason the exception was thrown.
-        /// </summary>
-        public VncFailureReason Reason
-        {
-            get;
-            private set;
-        }
     }
+
+    /// <summary>
+    /// Initializes an instance of the <see cref="VncException"/> class, with a reason specified.
+    /// </summary>
+    /// <param name="message">The error message.</param>
+    /// <param name="reason">The reason the exception was thrown.</param>
+    /// <param name="innerException">The exception that caused this exception to be thrown, or <c>null</c>.</param>
+    public VncException(string message, VncFailureReason reason = VncFailureReason.Unknown,
+                        Exception innerException = null)
+        : base(message, innerException)
+    {
+        Reason = reason;
+    }
+
+    /// <summary>
+    /// The reason the exception was thrown.
+    /// </summary>
+    public VncFailureReason Reason { get; private set; }
 }

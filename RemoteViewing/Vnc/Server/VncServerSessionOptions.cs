@@ -28,20 +28,15 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #endregion
 
-namespace RemoteViewing.Vnc.Server
+namespace RemoteViewing.Vnc.Server;
+
+/// <summary>
+/// Specifies options for interacting with a VNC client.
+/// </summary>
+public class VncServerSessionOptions
 {
     /// <summary>
-    /// Specifies options for interacting with a VNC client.
+    /// The desired authentication method.
     /// </summary>
-    public class VncServerSessionOptions
-    {
-        /// <summary>
-        /// The desired authentication method.
-        /// </summary>
-        public AuthenticationMethod AuthenticationMethod
-        {
-            get;
-            set;
-        }
-    }
+    public AuthenticationMethod AuthenticationMethod { get; set; }
 }

@@ -77,131 +77,128 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #endregion
 
-using System.Runtime.InteropServices;
+namespace RemoteViewing.Utility;
 
-namespace RemoteViewing.Utility
+unsafe static partial class ZLib
 {
-    unsafe static partial class ZLib
+    const uint BASE = 65521U; /* largest prime smaller than 65536 */
+    const uint NMAX = 5552;
+    /* NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1 */
+
+    static void DO16(ref ulong adler, ref ulong sum2, byte* buf)
     {
-        const uint BASE = 65521U; /* largest prime smaller than 65536 */
-        const uint NMAX = 5552;
-        /* NMAX is the largest n such that 255n(n+1)/2 + (n+1)(BASE-1) <= 2^32-1 */
+        for (int i = 0; i < 16; i++) { adler += buf[i]; sum2 += adler; }
+    }
 
-        static void DO16(ref ulong adler, ref ulong sum2, byte* buf)
+    static void MOD(ref ulong u) { u %= BASE; }
+    static void MOD28(ref ulong u) { u %= BASE; }
+    static void MOD63(ref ulong u) { u %= BASE; }
+
+    /* ========================================================================= */
+    static ulong adler32_z(ulong adler, byte* buf, ulong len)
+    {
+        ulong sum2;
+        uint n;
+
+        /* split Adler-32 into component sums */
+        sum2 = (adler >> 16) & 0xffff;
+        adler &= 0xffff;
+
+        /* in case user likes doing a byte at a time, keep it fast */
+        if (len == 1)
         {
-            for (int i = 0; i < 16; i++) { adler += buf[i]; sum2 += adler; }
-        }
-
-        static void MOD(ref ulong u) { u %= BASE; }
-        static void MOD28(ref ulong u) { u %= BASE; }
-        static void MOD63(ref ulong u) { u %= BASE; }
-
-        /* ========================================================================= */
-        static ulong adler32_z(ulong adler, byte* buf, ulong len)
-        {
-            ulong sum2;
-            uint n;
-
-            /* split Adler-32 into component sums */
-            sum2 = (adler >> 16) & 0xffff;
-            adler &= 0xffff;
-
-            /* in case user likes doing a byte at a time, keep it fast */
-            if (len == 1)
-            {
-                adler += buf[0];
-                if (adler >= BASE)
-                    adler -= BASE;
-                sum2 += adler;
-                if (sum2 >= BASE)
-                    sum2 -= BASE;
-                return adler | (sum2 << 16);
-            }
-
-            /* initial Adler-32 value (deferred check for len == 1 speed) */
-            if (buf == null)
-                return 1L;
-
-            /* in case short lengths are provided, keep it somewhat fast */
-            if (len < 16)
-            {
-                while (len-- != 0)
-                {
-                    adler += *buf++;
-                    sum2 += adler;
-                }
-                if (adler >= BASE)
-                    adler -= BASE;
-                MOD28(ref sum2);            /* only added so many BASE's */
-                return adler | (sum2 << 16);
-            }
-
-            /* do length NMAX blocks -- requires just one modulo operation */
-            while (len >= NMAX)
-            {
-                len -= NMAX;
-                n = NMAX / 16;          /* NMAX is divisible by 16 */
-                do
-                {
-                    DO16(ref adler, ref sum2, buf);          /* 16 sums unrolled */
-                    buf += 16;
-                } while (--n != 0);
-                MOD(ref adler);
-                MOD(ref sum2);
-            }
-
-            /* do remaining bytes (less than NMAX, still just one modulo) */
-            if (len != 0)
-            {                  /* avoid modulos if none remaining */
-                while (len >= 16)
-                {
-                    len -= 16;
-                    DO16(ref adler, ref sum2, buf);
-                    buf += 16;
-                }
-                while (len-- != 0)
-                {
-                    adler += *buf++;
-                    sum2 += adler;
-                }
-                MOD(ref adler);
-                MOD(ref sum2);
-            }
-
-            /* return recombined sums */
+            adler += buf[0];
+            if (adler >= BASE)
+                adler -= BASE;
+            sum2 += adler;
+            if (sum2 >= BASE)
+                sum2 -= BASE;
             return adler | (sum2 << 16);
         }
 
-        /* ========================================================================= */
-        static ulong adler32(ulong adler, byte* buf, uint len)
+        /* initial Adler-32 value (deferred check for len == 1 speed) */
+        if (buf == null)
+            return 1L;
+
+        /* in case short lengths are provided, keep it somewhat fast */
+        if (len < 16)
         {
-            return adler32_z(adler, buf, len);
+            while (len-- != 0)
+            {
+                adler += *buf++;
+                sum2 += adler;
+            }
+            if (adler >= BASE)
+                adler -= BASE;
+            MOD28(ref sum2);            /* only added so many BASE's */
+            return adler | (sum2 << 16);
         }
 
-        /* ========================================================================= */
-        static ulong adler32_combine_(ulong adler1, ulong adler2, ulong len2)
+        /* do length NMAX blocks -- requires just one modulo operation */
+        while (len >= NMAX)
         {
-            ulong sum1;
-            ulong sum2;
-            ulong rem;
-
-            /* for negative len, return invalid adler32 as a clue for debugging */
-            if (len2 < 0)
-                return 0xffffffffUL;
-
-            /* the derivation of this formula is left as an exercise for the reader */
-            MOD63(ref len2);                /* assumes len2 >= 0 */
-            rem = (uint)len2;
-            sum1 = adler1 & 0xffff;
-            sum2 = rem * sum1;
+            len -= NMAX;
+            n = NMAX / 16;          /* NMAX is divisible by 16 */
+            do
+            {
+                DO16(ref adler, ref sum2, buf);          /* 16 sums unrolled */
+                buf += 16;
+            } while (--n != 0);
+            MOD(ref adler);
             MOD(ref sum2);
-            sum1 += (adler2 & 0xffff) + BASE - 1;
-            sum2 += ((adler1 >> 16) & 0xffff) + ((adler2 >> 16) & 0xffff) + BASE - rem;
-            if (sum1 >= BASE) sum1 -= BASE;
-            if (sum1 >= BASE) sum1 -= BASE;
-            if (sum2 >= ((ulong)BASE << 1)) sum2 -= ((ulong)BASE << 1);
-            if (sum2 >= BASE) sum2 -= BASE;
-            return sum1 | (sum2 << 16);
         }
+
+        /* do remaining bytes (less than NMAX, still just one modulo) */
+        if (len != 0)
+        {                  /* avoid modulos if none remaining */
+            while (len >= 16)
+            {
+                len -= 16;
+                DO16(ref adler, ref sum2, buf);
+                buf += 16;
+            }
+            while (len-- != 0)
+            {
+                adler += *buf++;
+                sum2 += adler;
+            }
+            MOD(ref adler);
+            MOD(ref sum2);
+        }
+
+        /* return recombined sums */
+        return adler | (sum2 << 16);
+    }
+
+    /* ========================================================================= */
+    static ulong adler32(ulong adler, byte* buf, uint len)
+    {
+        return adler32_z(adler, buf, len);
+    }
+
+    /* ========================================================================= */
+    static ulong adler32_combine_(ulong adler1, ulong adler2, ulong len2)
+    {
+        ulong sum1;
+        ulong sum2;
+        ulong rem;
+
+        /* for negative len, return invalid adler32 as a clue for debugging */
+        if (len2 < 0)
+            return 0xffffffffUL;
+
+        /* the derivation of this formula is left as an exercise for the reader */
+        MOD63(ref len2);                /* assumes len2 >= 0 */
+        rem = (uint)len2;
+        sum1 = adler1 & 0xffff;
+        sum2 = rem * sum1;
+        MOD(ref sum2);
+        sum1 += (adler2 & 0xffff) + BASE - 1;
+        sum2 += ((adler1 >> 16) & 0xffff) + ((adler2 >> 16) & 0xffff) + BASE - rem;
+        if (sum1 >= BASE) sum1 -= BASE;
+        if (sum1 >= BASE) sum1 -= BASE;
+        if (sum2 >= ((ulong)BASE << 1)) sum2 -= ((ulong)BASE << 1);
+        if (sum2 >= BASE) sum2 -= BASE;
+        return sum1 | (sum2 << 16);
     }
 }
