@@ -488,7 +488,7 @@ public class VncControl : FrameworkElement
         {
             if (AllowInput)
             {
-                int keysym = VncKeysym.FromKey(e.Key); if (keysym < 0) { return; }
+                int keysym = (int)VncKeysym.FromKey(e.Key);
                 SendKeyUpdate(keysym, true); _keysyms.Add(keysym);
                 e.Handled = true;
             }
@@ -503,7 +503,7 @@ public class VncControl : FrameworkElement
         {
             if (AllowInput)
             {
-                int keysym = VncKeysym.FromKey(e.Key); if (keysym < 0) { return; }
+                int keysym = (int)VncKeysym.FromKey(e.Key);
                 SendKeyUpdate(keysym, false); _keysyms.Remove(keysym);
                 e.Handled = true;
             }

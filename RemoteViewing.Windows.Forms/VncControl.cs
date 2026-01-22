@@ -391,7 +391,7 @@ public partial class VncControl : UserControl
     {
         if (!DesignMode)
         {
-            int keysym = VncKeysym.FromKeyCode(e.KeyCode); if (keysym < 0) { return; }
+            int keysym = (int)VncKeysym.FromKeyCode(e.KeyCode);
             SendKeyUpdate(keysym, true); _keysyms.Add(keysym);
         }
     }
@@ -400,7 +400,7 @@ public partial class VncControl : UserControl
     {
         if (!DesignMode)
         {
-            int keysym = VncKeysym.FromKeyCode(e.KeyCode); if (keysym < 0) { return; }
+            int keysym = (int)VncKeysym.FromKeyCode(e.KeyCode);
             SendKeyUpdate(keysym, false); _keysyms.Remove(keysym);
         }
     }
