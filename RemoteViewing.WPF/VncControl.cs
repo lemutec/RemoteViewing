@@ -403,6 +403,13 @@ public class VncControl : FrameworkElement
     {
         if (AllowClipboardSharingFromServer)
         {
+            // Ensure clipboard operation is performed in UI thread
+            if (!Dispatcher.CheckAccess())
+            {
+                Dispatcher.BeginInvoke(() => HandleRemoteClipboardChanged(sender, e));
+                return;
+            }
+
             if (e.Contents.Length != 0 && _expectedClipboard != e.Contents)
             {
                 try
