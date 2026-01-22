@@ -712,10 +712,10 @@ public partial class VncControl : UserControl
     /// <summary>
     /// Specifies how the screen is positioned and sized.
     ///
-    /// By default, this is <see cref="VncControlSizeMode.AutoSize"/>.
+    /// By default, this is <see cref="VncControlSizeMode.Zoom"/>.
     /// </summary>
-    [DefaultValue(VncControlSizeMode.AutoSize)]
-    public VncControlSizeMode SizeMode { get; set; } = VncControlSizeMode.AutoSize;
+    [DefaultValue(VncControlSizeMode.Zoom)]
+    public VncControlSizeMode SizeMode { get; set; } = VncControlSizeMode.Zoom;
 
     private float ScaleFactor
     {

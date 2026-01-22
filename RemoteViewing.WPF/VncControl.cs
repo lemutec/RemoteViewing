@@ -100,7 +100,6 @@ public class VncControl : FrameworkElement
         AllowInput = true;
         AllowRemoteCursor = true;
         Client = new VncClient();
-        SizeMode = VncControlSizeMode.AutoSize;
 
         Focusable = true;
         ClipToBounds = true;
@@ -942,9 +941,9 @@ public class VncControl : FrameworkElement
     /// <summary>
     /// Specifies how the screen is positioned and sized.
     ///
-    /// By default, this is <see cref="VncControlSizeMode.AutoSize"/>.
+    /// By default, this is <see cref="VncControlSizeMode.Zoom"/>.
     /// </summary>
-    public VncControlSizeMode SizeMode { get; set; } = VncControlSizeMode.AutoSize;
+    public VncControlSizeMode SizeMode { get; set; } = VncControlSizeMode.Zoom;
 
     private float ScaleFactor
     {
