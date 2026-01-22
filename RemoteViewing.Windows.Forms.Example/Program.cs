@@ -33,11 +33,13 @@ using System.Windows.Forms;
 
 namespace RemoteViewing.Windows.Forms.Example;
 
-class Program
+internal sealed class Program
 {
     [STAThread]
-    static void Main(string[] args)
+    public static void Main(string[] args)
     {
+        _ = args;
+
         Application.SetCompatibleTextRenderingDefault(false);
         Application.EnableVisualStyles();
         Application.Run(new MainForm());
