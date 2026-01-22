@@ -226,9 +226,9 @@ public partial class VncControl : UserControl
 
     private void HandleClosed(object sender, EventArgs e)
     {
-         // Avoid calling when the handle is not created
+        // Avoid calling when the handle is not created
         if (!IsHandleCreated) return;
-        
+
         _ = BeginInvoke(() =>
         {
             ClearInputState();
@@ -450,7 +450,7 @@ public partial class VncControl : UserControl
         }
     }
 
-    void SendMouseScroll(bool down)
+    private void SendMouseScroll(bool down)
     {
         int mask = down ? (1 << 4) : (1 << 3);
         _buttons |= mask; SendMouseUpdate();
@@ -469,7 +469,7 @@ public partial class VncControl : UserControl
         }
     }
 
-    bool TryComputeDestinationBounds(out Rectangle destination)
+    private bool TryComputeDestinationBounds(out Rectangle destination)
     {
         destination = default;
 
