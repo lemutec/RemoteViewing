@@ -201,35 +201,35 @@ public partial class VncControl : UserControl
 
     private void HandleConnected(object sender, EventArgs e)
     {
-        BeginInvoke(new Action(() =>
+        _ = BeginInvoke(() =>
         {
             _expectedClipboard = string.Empty;
             ClearInputState();
             Connected?.Invoke(this, EventArgs.Empty);
-        }));
+        });
     }
 
     private void HandleConnectionFailed(object sender, EventArgs e)
     {
-        BeginInvoke(new Action(() =>
+        _ = BeginInvoke(() =>
         {
             ClearInputState();
             ConnectionFailed?.Invoke(this, EventArgs.Empty);
-        }));
+        });
     }
 
     private void HandleClosed(object sender, EventArgs e)
     {
-        BeginInvoke(new Action(() =>
+        _ = BeginInvoke(() =>
         {
             ClearInputState();
             Closed?.Invoke(this, EventArgs.Empty);
-        }));
+        });
     }
 
     private void HandleFramebufferChanged(object sender, FramebufferChangedEventArgs e)
     {
-        BeginInvoke(new Action(() =>
+        _ = BeginInvoke(() =>
         {
             if (DesignMode) { return; }
 
@@ -268,7 +268,7 @@ public partial class VncControl : UserControl
             }
 
             RaiseFramebufferChanged();
-        }));
+        });
     }
 
     private void RaiseFramebufferChanged()
@@ -287,6 +287,13 @@ public partial class VncControl : UserControl
     {
         if (AllowClipboardSharingFromServer)
         {
+            // Ensure clipboard operation is performed in UI thread
+            if (InvokeRequired)
+            {
+                _ = BeginInvoke(() => HandleRemoteClipboardChanged(sender, e));
+                return;
+            }
+
             if (e.Contents.Length != 0 && _expectedClipboard != e.Contents)
             {
                 try
