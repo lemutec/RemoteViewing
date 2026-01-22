@@ -1,0 +1,68 @@
+<Window x:Class="RemoteViewing.WPF.Example.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vnc="clr-namespace:RemoteViewing.WPF;assembly=RemoteViewing.WPF"
+        Title="RemoteViewing - Example VNC Client"
+        Width="900"
+        Height="600"
+        WindowState="Maximized">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+        </Grid.RowDefinitions>
+
+        <!--  Connection Panel  -->
+        <Border Grid.Row="0" Padding="4">
+            <StackPanel Orientation="Horizontal">
+                <Button x:Name="btnConnect"
+                        Width="90"
+                        Height="25"
+                        Margin="0,0,15,0"
+                        Click="btnConnect_Click"
+                        Content="Connect" />
+
+                <TextBlock Margin="0,0,5,0"
+                           VerticalAlignment="Center"
+                           Text="Hostname:" />
+                <TextBox x:Name="txtHostname"
+                         Width="200"
+                         Height="24"
+                         Margin="0,0,15,0"
+                         VerticalContentAlignment="Center"
+                         Text="127.0.0.1" />
+
+                <TextBlock Margin="0,0,5,0"
+                           VerticalAlignment="Center"
+                           Text="Port:" />
+                <TextBox x:Name="txtPort"
+                         Width="80"
+                         Height="24"
+                         Margin="0,0,15,0"
+                         VerticalContentAlignment="Center"
+                         Text="5900" />
+
+                <TextBlock Margin="0,0,5,0"
+                           VerticalAlignment="Center"
+                           Text="Password:" />
+                <PasswordBox x:Name="txtPassword"
+                             Width="150"
+                             Height="24"
+                             VerticalContentAlignment="Center" />
+            </StackPanel>
+        </Border>
+
+        <!--  VNC Control  -->
+        <Border Grid.Row="1"
+                Margin="5"
+                Background="Black">
+            <vnc:VncControl x:Name="vncControl"
+                            AllowClipboardSharingFromServer="True"
+                            AllowClipboardSharingToServer="True"
+                            Closed="vncControl_Closed"
+                            Connected="vncControl_Connected"
+                            ConnectionFailed="vncControl_ConnectionFailed"
+                            SizeMode="Zoom" />
+        </Border>
+    </Grid>
+</Window>
