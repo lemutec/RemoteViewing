@@ -68,6 +68,12 @@ public partial class VncControl : UserControl
     /// </summary>
     public event EventHandler FramebufferChanged;
 
+    private enum TransformDirection
+    {
+        FromDevice,
+        ToDevice,
+    }
+
     private const int WM_CLIPBOARDUPDATE = 0x31d;
 
     private int _buttons;
@@ -78,6 +84,7 @@ public partial class VncControl : UserControl
     private VncClient _client;
     private string _expectedClipboard = string.Empty;
     private HashSet<int> _keysyms = [];
+    private float _scaleFactor = 1.0f;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="VncControl"/>.
@@ -181,6 +188,7 @@ public partial class VncControl : UserControl
         {
             _bitmap = new Bitmap(w, h, PixelFormat.Format32bppRgb);
             VncBitmap.CopyFromFramebuffer(framebuffer, new VncRectangle(0, 0, w, h), _bitmap, 0, 0);
+            ScaleFactor = GetScaleFactor(framebuffer);
             if (SizeMode == VncControlSizeMode.AutoSize) { ClientSize = new Size(w, h); }
             Invalidate();
         }
@@ -264,18 +272,34 @@ public partial class VncControl : UserControl
                 }
             }
 
-            if (TryComputeDestinationBounds(out Rectangle dst))
+            if (SizeMode == VncControlSizeMode.AutoSize)
             {
-                var scaleX = (double)dst.Width / _bitmap.Width;
-                var scaleY = (double)dst.Height / _bitmap.Height;
+                // AutoResize mode: use transformed rectangles
                 for (int i = 0; i < e.RectangleCount; i++)
                 {
-                    var srcRect = e.GetRectangle(i);
-                    double dstX0 = dst.X + srcRect.X * scaleX; double dstX1 = dstX0 + srcRect.Width * scaleX;
-                    double dstY0 = dst.Y + srcRect.Y * scaleY; double dstY1 = dstY0 + srcRect.Height * scaleY;
-                    int dstX = (int)Math.Floor(dstX0), dstW = (int)Math.Ceiling(dstX1) - dstX;
-                    int dstY = (int)Math.Floor(dstY0), dstH = (int)Math.Ceiling(dstY1) - dstY;
-                    Invalidate(new Rectangle(dstX, dstY, dstW, dstH));
+                    var rect = e.GetRectangle(i);
+                    var transformedRect = Transform(
+                        new Rectangle(rect.X, rect.Y, rect.Width, rect.Height),
+                        TransformDirection.FromDevice);
+                    Invalidate(transformedRect);
+                }
+            }
+            else
+            {
+                // Original mode: use destination bounds scaling
+                if (TryComputeDestinationBounds(out Rectangle dst))
+                {
+                    var scaleX = (double)dst.Width / _bitmap.Width;
+                    var scaleY = (double)dst.Height / _bitmap.Height;
+                    for (int i = 0; i < e.RectangleCount; i++)
+                    {
+                        var srcRect = e.GetRectangle(i);
+                        double dstX0 = dst.X + srcRect.X * scaleX; double dstX1 = dstX0 + srcRect.Width * scaleX;
+                        double dstY0 = dst.Y + srcRect.Y * scaleY; double dstY1 = dstY0 + srcRect.Height * scaleY;
+                        int dstX = (int)Math.Floor(dstX0), dstW = (int)Math.Ceiling(dstX1) - dstX;
+                        int dstY = (int)Math.Floor(dstY0), dstH = (int)Math.Ceiling(dstY1) - dstY;
+                        Invalidate(new Rectangle(dstX, dstY, dstW, dstH));
+                    }
                 }
             }
 
@@ -362,9 +386,19 @@ public partial class VncControl : UserControl
     {
         if (_client != null && AllowInput)
         {
-            if (TryScaleMouseLocation(_mouseLocation, out Point scaledLocation))
+            if (SizeMode == VncControlSizeMode.AutoSize)
             {
-                _client.SendPointerEvent(scaledLocation.X, scaledLocation.Y, _buttons);
+                // AutoResize mode: use transformed coordinates
+                var devicePoint = TransformPoint(_mouseLocation.X, _mouseLocation.Y, TransformDirection.ToDevice);
+                _client.SendPointerEvent(devicePoint.X, devicePoint.Y, _buttons);
+            }
+            else
+            {
+                // Original mode: use scaled coordinates
+                if (TryScaleMouseLocation(_mouseLocation, out Point scaledLocation))
+                {
+                    _client.SendPointerEvent(scaledLocation.X, scaledLocation.Y, _buttons);
+                }
             }
         }
     }
@@ -516,15 +550,78 @@ public partial class VncControl : UserControl
         return true;
     }
 
+    private float GetScaleFactor(VncFramebuffer framebuffer)
+    {
+        if (framebuffer == null)
+        {
+            return 1.0f;
+        }
+
+        return GetScaleFactor(framebuffer.Width, framebuffer.Height, ClientSize.Width, ClientSize.Height);
+    }
+
+    private float GetScaleFactor(int remoteWidth, int remoteHeight, int controlWidth, int controlHeight)
+    {
+        if (remoteWidth <= 0 || remoteHeight <= 0 || controlWidth <= 0 || controlHeight <= 0)
+        {
+            return 1.0f;
+        }
+
+        var widthScaleFactor = (float)controlWidth / remoteWidth;
+        var heightScaleFactor = (float)controlHeight / remoteHeight;
+        var scaleFactor = Math.Min(widthScaleFactor, heightScaleFactor);
+        return scaleFactor > 1.0f ? 1.0f : scaleFactor;
+    }
+
+    private Rectangle Transform(Rectangle rectangle, TransformDirection direction)
+    {
+        var upperLeft = TransformPoint(rectangle.Left, rectangle.Top, direction);
+        var bottomRight = TransformPoint(rectangle.Right, rectangle.Bottom, direction);
+        return Rectangle.FromLTRB(upperLeft.X, upperLeft.Y, bottomRight.X, bottomRight.Y);
+    }
+
+    private Point TransformPoint(int x, int y, TransformDirection direction)
+    {
+        var scaleFactor = ScaleFactor;
+        if (scaleFactor >= 1.0f)
+        {
+            return new Point(x, y);
+        }
+
+        scaleFactor = direction == TransformDirection.ToDevice ? 1.0f / scaleFactor : scaleFactor;
+
+        return new Point((int)(x * scaleFactor), (int)(y * scaleFactor));
+    }
+
     private void VncControl_Paint(object sender, PaintEventArgs e)
     {
         if (!DesignMode)
         {
-            if (TryComputeDestinationBounds(out Rectangle dst))
+            if (_bitmap == null)
             {
-                var src = new Rectangle(0, 0, _bitmap.Width, _bitmap.Height);
-                e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                e.Graphics.DrawImage(_bitmap, dst, src, GraphicsUnit.Pixel);
+                return;
+            }
+
+            if (SizeMode == VncControlSizeMode.AutoSize)
+            {
+                // AutoResize rendering mode
+                var scaleFactor = ScaleFactor;
+                if (scaleFactor < 1.0f)
+                {
+                    e.Graphics.ScaleTransform(scaleFactor, scaleFactor);
+                }
+
+                e.Graphics.DrawImageUnscaled(_bitmap, 0, 0);
+            }
+            else
+            {
+                // Original rendering mode with scaling and interpolation
+                if (TryComputeDestinationBounds(out Rectangle dst))
+                {
+                    var src = new Rectangle(0, 0, _bitmap.Width, _bitmap.Height);
+                    e.Graphics.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                    e.Graphics.DrawImage(_bitmap, dst, src, GraphicsUnit.Pixel);
+                }
             }
         }
     }
@@ -617,12 +714,19 @@ public partial class VncControl : UserControl
     /// By default, this is <see cref="VncControlSizeMode.AutoSize"/>.
     /// </summary>
     [DefaultValue(VncControlSizeMode.AutoSize)]
-    public VncControlSizeMode SizeMode { get; set; }
+    public VncControlSizeMode SizeMode { get; set; } = VncControlSizeMode.AutoSize;
+
+    private float ScaleFactor
+    {
+        get => _scaleFactor;
+        set => _scaleFactor = value;
+    }
 
     private void VncControl_Resize(object sender, EventArgs e)
     {
         if (!DesignMode)
         {
+            ScaleFactor = GetScaleFactor(_client?.Framebuffer);
             Invalidate();
         }
     }

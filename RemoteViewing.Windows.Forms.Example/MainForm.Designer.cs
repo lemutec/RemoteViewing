@@ -181,7 +181,7 @@
             this.vncControl.Margin = new System.Windows.Forms.Padding(5);
             this.vncControl.Name = "vncControl";
             this.vncControl.Size = new System.Drawing.Size(838, 505);
-            this.vncControl.SizeMode = RemoteViewing.Windows.Forms.VncControlSizeMode.Zoom;
+            this.vncControl.SizeMode = RemoteViewing.Windows.Forms.VncControlSizeMode.AutoSize;
             this.vncControl.TabIndex = 4;
             this.vncControl.Connected += new System.EventHandler(this.vncControl_Connected);
             this.vncControl.ConnectionFailed += new System.EventHandler(this.vncControl_ConnectionFailed);
