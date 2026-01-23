@@ -7,6 +7,9 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <DocumentationFile>$(OutputPath)\RemoteViewing.Windows.Forms.xml</DocumentationFile>
     <NoWarn>1701;1702;CA1416;CS1591</NoWarn>
+    <PackageId>Lemutec.RemoteViewing.Windows.Forms</PackageId>
+    <Product>Lemutec.RemoteViewing.Windows.Forms</Product>
+    <AssemblyName>Lemutec.RemoteViewing.Windows.Forms</AssemblyName>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <AssemblyVersion>1.2.0.0</AssemblyVersion>

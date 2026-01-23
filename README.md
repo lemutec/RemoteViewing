@@ -35,22 +35,30 @@
 
 ## 📦 Installation
 
+Available on NuGet:
+
+| Package | NuGet |
+|---------|-------|
+| Lemutec.RemoteViewing | [![NuGet](https://img.shields.io/nuget/v/Lemutec.RemoteViewing)](https://www.nuget.org/packages/Lemutec.RemoteViewing) |
+| Lemutec.RemoteViewing.Windows.Forms | [![NuGet](https://img.shields.io/nuget/v/Lemutec.RemoteViewing.Windows.Forms)](https://www.nuget.org/packages/Lemutec.RemoteViewing.Windows.Forms) |
+| Lemutec.RemoteViewing.WPF | [![NuGet](https://img.shields.io/nuget/v/Lemutec.RemoteViewing.WPF)](https://www.nuget.org/packages/Lemutec.RemoteViewing.WPF) |
+
 Install via NuGet Package Manager:
 
 ```bash
 # Core library
-dotnet add package RemoteViewing
+dotnet add package Lemutec.RemoteViewing
 
 # Windows Forms control
-dotnet add package RemoteViewing.Windows.Forms
+dotnet add package Lemutec.RemoteViewing.Windows.Forms
 
 # WPF control
-dotnet add package RemoteViewing.WPF
+dotnet add package Lemutec.RemoteViewing.WPF
 ```
 
 ## 🚀 Usage
 
-### 💻 VNC Client (Windows Forms)
+### 🪟 VNC Client (Windows Forms)
 
 ```csharp
 using RemoteViewing.Vnc;
@@ -106,9 +114,9 @@ session.Connect(client.GetStream(), options);
 
 | Package | Supported Frameworks |
 |---------|---------------------|
-| RemoteViewing | .NET Framework 4.6.2-4.8, .NET Standard 2.0/2.1, .NET 5.0-10.0 |
-| RemoteViewing.Windows.Forms | .NET Framework 4.6.2-4.8, .NET 5.0-10.0 (Windows) |
-| RemoteViewing.WPF | .NET Framework 4.6.2-4.8, .NET 5.0-10.0 (Windows) |
+| [Lemutec.RemoteViewing](https://www.nuget.org/packages/Lemutec.RemoteViewing) | .NET Framework 4.6.2-4.8, .NET Standard 2.0/2.1, .NET 5.0-10.0 |
+| [Lemutec.RemoteViewing.Windows.Forms](https://www.nuget.org/packages/Lemutec.RemoteViewing.Windows.Forms) | .NET Framework 4.6.2-4.8, .NET 5.0-10.0 (Windows) |
+| [Lemutec.RemoteViewing.WPF](https://www.nuget.org/packages/Lemutec.RemoteViewing.WPF) | .NET Framework 4.6.2-4.8, .NET 5.0-10.0 (Windows) |
 
 ## 📡 VNC Protocol Support
 

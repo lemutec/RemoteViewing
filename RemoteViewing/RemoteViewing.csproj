@@ -6,6 +6,9 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <DocumentationFile>$(OutputPath)\RemoteViewing.xml</DocumentationFile>
     <NoWarn>1701;1702;CS0162;CS0414;CS1591;CS8981;IDE1006;SYSLIB0021</NoWarn>
+    <PackageId>Lemutec.RemoteViewing</PackageId>
+    <Product>Lemutec.RemoteViewing</Product>
+    <AssemblyName>Lemutec.RemoteViewing</AssemblyName>
     <EnableWindowsTargeting>true</EnableWindowsTargeting>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <AssemblyVersion>1.2.0.0</AssemblyVersion>
