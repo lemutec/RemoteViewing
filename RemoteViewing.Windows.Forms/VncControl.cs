@@ -1,4 +1,4 @@
-﻿#region License
+#region License
 
 /*
 RemoteViewing VNC Client/Server Library for .NET
@@ -93,13 +93,7 @@ public partial class VncControl : UserControl
     {
         SetStyle(ControlStyles.OptimizedDoubleBuffer | ControlStyles.AllPaintingInWmPaint | ControlStyles.UserPaint, true);
 
-        using (var bmp = new Bitmap(5, 5))
-        using (var g = Graphics.FromImage(bmp))
-        {
-            g.Clear(Color.White);
-            g.FillRectangle(Brushes.Black, 1, 1, 3, 3);
-            _dotCursor = new Cursor(bmp.GetHicon());
-        }
+        _dotCursor = LoadCursorFromResource();
 
         AllowInput = true;
         AllowRemoteCursor = true;
@@ -107,6 +101,31 @@ public partial class VncControl : UserControl
         SizeMode = VncControlSizeMode.AutoSize;
 
         InitializeComponent();
+    }
+
+    /// <summary>
+    /// Loads the cursor from embedded resource.
+    /// </summary>
+    private static Cursor LoadCursorFromResource()
+    {
+        try
+        {
+            // Use Cursor constructor that directly loads from embedded resource
+            return new Cursor(typeof(VncControl), "Assets.DOTCURSOR.cur");
+        }
+        catch
+        {
+            // Fallback to creating a simple dot cursor if resource loading fails
+        }
+
+        // Fallback: create a simple dot cursor programmatically
+        {
+            using Bitmap bmp = new(5, 5);
+            using Graphics g = Graphics.FromImage(bmp);
+            g.Clear(Color.White);
+            g.FillRectangle(Brushes.Black, 1, 1, 3, 3);
+            return new Cursor(bmp.GetHicon());
+        }
     }
 
     protected override void OnLoad(EventArgs e)

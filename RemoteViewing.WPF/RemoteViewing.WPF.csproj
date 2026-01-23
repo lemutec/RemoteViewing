@@ -10,6 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RemoteViewing\RemoteViewing.csproj"/>
+    <EmbeddedResource Include="Assets\DOTCURSOR.cur" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RemoteViewing\RemoteViewing.csproj" />
   </ItemGroup>
 </Project>

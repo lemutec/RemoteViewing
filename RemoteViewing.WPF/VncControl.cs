@@ -33,7 +33,9 @@ using RemoteViewing.Vnc;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.IO;
 using System.Media;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Input;
@@ -94,8 +96,8 @@ public class VncControl : FrameworkElement
     /// </summary>
     public VncControl()
     {
-        // Create a small dot cursor (5x5, white background with 3x3 black center)
-        _dotCursor = CreateDotCursor();
+        // Load cursor from embedded resource
+        _dotCursor = LoadCursorFromResource();
 
         AllowInput = true;
         AllowRemoteCursor = true;
@@ -108,6 +110,37 @@ public class VncControl : FrameworkElement
         Unloaded += VncControl_Unloaded;
         SizeChanged += VncControl_SizeChanged;
         LayoutUpdated += VncControl_LayoutUpdated;
+    }
+
+    /// <summary>
+    /// Loads the cursor from embedded resource.
+    /// </summary>
+    private static Cursor LoadCursorFromResource()
+    {
+        try
+        {
+            Assembly assembly = Assembly.GetExecutingAssembly();
+            const string resourceName = "RemoteViewing.WPF.Assets.DOTCURSOR.cur";
+            using Stream stream = assembly.GetManifestResourceStream(resourceName);
+
+            if (stream != null)
+            {
+                // WPF requires the cursor to be loaded from a stream
+                // We need to copy to a MemoryStream to ensure it's seekable
+                MemoryStream memoryStream = new();
+                stream.CopyTo(memoryStream);
+                memoryStream.Position = 0;
+
+                return new Cursor(memoryStream);
+            }
+        }
+        catch
+        {
+            // Fallback to CreateDotCursor if resource loading fails
+        }
+
+        // Fallback: create cursor programmatically
+        return CreateDotCursor();
     }
 
     /// <summary>
@@ -124,7 +157,7 @@ public class VncControl : FrameworkElement
 
             // Create the color (XOR) mask - BGRA format
             // White = 0xFFFFFFFF, Black = 0xFF000000
-            var colorData = new byte[size * size * 4];
+            byte[] colorData = new byte[size * size * 4];
             for (int y = 0; y < size; y++)
             {
                 for (int x = 0; x < size; x++)
@@ -154,13 +187,13 @@ public class VncControl : FrameworkElement
             // Create the AND mask (all 0s for fully opaque cursor)
             // AND mask is 1 bit per pixel, padded to WORD boundary
             int andMaskStride = ((size + 15) / 16) * 2;
-            var andMask = new byte[andMaskStride * size];
+            byte[] andMask = new byte[andMaskStride * size];
             // All zeros = fully opaque
 
             // Create the bitmap info header
-            var bmi = new BITMAPV5HEADER
+            BITMAPV5HEADER bmi = new()
             {
-                bV5Size = Marshal.SizeOf(typeof(BITMAPV5HEADER)),
+                bV5Size = Marshal.SizeOf<BITMAPV5HEADER>(),
                 bV5Width = size,
                 bV5Height = -size, // Negative for top-down
                 bV5Planes = 1,
@@ -219,7 +252,7 @@ public class VncControl : FrameworkElement
             finally
             {
                 if (hBitmap != IntPtr.Zero) DeleteObject(hBitmap);
-                ReleaseDC(IntPtr.Zero, hdc);
+                _ = ReleaseDC(IntPtr.Zero, hdc);
             }
         }
         catch

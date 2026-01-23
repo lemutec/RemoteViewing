@@ -126,8 +126,8 @@ public class VncScreenFramebufferSource : IVncFramebufferSource
         BitBlt(hdcMem, 0, 0, width, height, hdcScreen, x, y, SRCCOPY);
 
         // Copy the bitmap data to the WriteableBitmap
-        BITMAPINFO bmi = new BITMAPINFO();
-        bmi.bmiHeader.biSize = Marshal.SizeOf(typeof(BITMAPINFOHEADER));
+        BITMAPINFO bmi = new();
+        bmi.bmiHeader.biSize = Marshal.SizeOf<BITMAPINFOHEADER>();
         bmi.bmiHeader.biWidth = width;
         bmi.bmiHeader.biHeight = -height; // Negative to indicate top-down DIB
         bmi.bmiHeader.biPlanes = 1;
@@ -206,6 +206,7 @@ public class VncScreenFramebufferSource : IVncFramebufferSource
     private struct BITMAPINFO
     {
         public BITMAPINFOHEADER bmiHeader;
+
         [MarshalAs(UnmanagedType.ByValArray, SizeConst = 1)]
         public int[] bmiColors;
     }
