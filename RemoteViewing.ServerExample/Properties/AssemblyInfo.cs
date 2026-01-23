@@ -35,5 +35,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("C# VNC server example")]
 [assembly: AssemblyProduct("RemoteViewing")]
 [assembly: AssemblyTitle("RemoteViewing.ServerExample")]
+[assembly: AssemblyFileVersion("1.2.0.0")]
+[assembly: AssemblyVersion("1.2.0.0")]
 [assembly: ComVisible(false)]
 [assembly: Guid("030506a8-328e-47fd-b9b5-b0e7207c2ac9")]

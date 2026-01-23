@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System;
 using System.Net.Sockets;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace RemoteViewing.Windows.Forms.Example;
@@ -42,7 +43,7 @@ public partial class MainForm : Form
         UpdateTitle();
     }
 
-    private void btnConnect_Click(object sender, EventArgs e)
+    private async void btnConnect_Click(object sender, EventArgs e)
     {
         if (vncControl.Client.IsConnected)
         {
@@ -68,13 +69,15 @@ public partial class MainForm : Form
             var options = new Vnc.VncClientConnectOptions();
             if (txtPassword.Text != string.Empty) { options.Password = txtPassword.Text.ToCharArray(); }
 
+            // Disable UI during connection attempt
+            SetConnectingState(true);
+
             try
             {
                 try
                 {
-                    Cursor = Cursors.WaitCursor;
-                    try { vncControl.Client.Connect(hostname, port, options); }
-                    finally { Cursor = Cursors.Default; }
+                    // Run the blocking Connect call on a background thread
+                    await Task.Run(() => vncControl.Client.Connect(hostname, port, options));
                 }
                 catch (Vnc.VncException ex)
                 {
@@ -98,7 +101,24 @@ public partial class MainForm : Form
                 {
                     Array.Clear(options.Password, 0, options.Password.Length);
                 }
+
+                // Restore UI state
+                SetConnectingState(false);
             }
+        }
+    }
+
+    private void SetConnectingState(bool connecting)
+    {
+        btnConnect.Enabled = !connecting;
+        txtHostname.Enabled = !connecting;
+        txtPort.Enabled = !connecting;
+        txtPassword.Enabled = !connecting;
+        Cursor = connecting ? Cursors.WaitCursor : Cursors.Default;
+
+        if (connecting)
+        {
+            btnConnect.Text = "Connecting...";
         }
     }
 

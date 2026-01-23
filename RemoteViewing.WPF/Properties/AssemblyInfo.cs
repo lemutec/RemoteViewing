@@ -31,13 +31,18 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Windows;
+using System.Windows.Markup;
 
 [assembly: AssemblyCopyright("Copyright © 2013, 2016, 2025 James F. Bellinger <http://software.seekye.com/remoteviewing>")]
 [assembly: AssemblyDescription("C# VNC client/server for WPF")]
 [assembly: AssemblyProduct("RemoteViewing")]
 [assembly: AssemblyTitle("RemoteViewing.WPF")]
-[assembly: AssemblyFileVersion("1.0.1.0")]
-[assembly: AssemblyVersion("1.0.1.0")]
+[assembly: AssemblyFileVersion("1.2.0.0")]
+[assembly: AssemblyVersion("1.2.0.0")]
 [assembly: CLSCompliant(true)]
 [assembly: ComVisible(false)]
 [assembly: Guid("5d389f2a-c1e5-47a2-b6c8-f87260e96e30")]
+[assembly: ThemeInfo(ResourceDictionaryLocation.None, ResourceDictionaryLocation.SourceAssembly)]
+[assembly: XmlnsPrefix("https://github.com/lemutec/RemoteViewing", "vnc")]
+[assembly: XmlnsDefinition("https://github.com/lemutec/RemoteViewing", "RemoteViewing.WPF")]
