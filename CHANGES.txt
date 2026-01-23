@@ -1,3 +1,13 @@
+1.2.0 (January 23, 2026):
+  Added a new WPF library (RemoteViewing.WPF) with full VncControl implementation.
+  Redesigned AutoSize mode rendering to use ScaleTransform for efficient scaling without resizing the control.
+  Added coordinate transformation system for proper mouse input handling in AutoSize mode.
+  Added a custom dot cursor (black center with white border) for better visibility when hovering over the VNC control.
+  Added FPS (frames per second) tracking to VncControl in both Windows Forms and WPF libraries.
+  Added ShowFps property to display FPS overlay in the top-left corner of the VNC control.
+  Added CurrentFps read-only property to programmatically access the current frame rate.
+  Example applications now display FPS in the title bar alongside bandwidth and CPU statistics.
+
 1.1.0 (October 14, 2025):
   Added support for 8-bit color (2-3-3 RGB) to the VNC server. It's not pretty, but it is bandwidth-efficient.
   Added Zlib support to the VNC server. Previously RemoteViewing was only useful on a LAN. With this change, it should be useful over the Internet.

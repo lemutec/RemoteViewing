@@ -1,5 +1,6 @@
 RemoteViewing VNC Client/Server Library for .NET
 Copyright (c) 2013, 2016-2018, 2025 James F. Bellinger <http://software.seekye.com/remoteviewing>
+Copyright (c) 2026 Lemutec <https://github.com/lemutec/RemoteViewing>
 All rights reserved.
 
 Redistribution and use in source and binary forms, with or without

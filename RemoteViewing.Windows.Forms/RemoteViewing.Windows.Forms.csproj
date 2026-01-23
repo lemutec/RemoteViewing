@@ -7,13 +7,40 @@
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
     <DocumentationFile>$(OutputPath)\RemoteViewing.Windows.Forms.xml</DocumentationFile>
     <NoWarn>1701;1702;CA1416;CS1591</NoWarn>
+    <EnableWindowsTargeting>true</EnableWindowsTargeting>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <FileVersion>1.2.0.0</FileVersion>
+    <Version>$(VersionPrefix)1.2.0.0</Version>
+    <Authors>James F. Bellinger, Lemutec</Authors>
+    <Company>James F. Bellinger, Lemutec</Company>
+    <Description>RemoteViewing is a .NET-native VNC client and server library. It supports Raw, Hextile, Copyrect, and Zlib encodings, and includes a Windows Forms control to make embedding VNC in your program extremely easy.</Description>
+    <PackageProjectUrl>https://github.com/lemutec/RemoteViewing</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/lemutec/RemoteViewing</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>csharp vnc-client vnc-server vnc rfb</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>logo.png</PackageIcon>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
   </PropertyGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Assets\DOTCURSOR.cur" />
+    <None Include="..\README.md" Pack="true" PackagePath=""/>
+    <None Include="..\logo.png" Pack="true" PackagePath=""/>
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\RemoteViewing\RemoteViewing.csproj" />
+    <EmbeddedResource Include="Assets\DOTCURSOR.cur"/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RemoteViewing\RemoteViewing.csproj"/>
   </ItemGroup>
 </Project>
