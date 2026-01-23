@@ -35,6 +35,5 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyDescription("C# VNC client example for WPF")]
 [assembly: AssemblyProduct("RemoteViewing")]
 [assembly: AssemblyTitle("RemoteViewing.WPF.Example")]
-
 [assembly: ComVisible(false)]
 [assembly: Guid("6e032d64-c2f6-48b3-c7d9-098371f07f41")]

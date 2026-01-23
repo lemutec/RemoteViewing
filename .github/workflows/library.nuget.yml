@@ -1,0 +1,54 @@
+name: pack
+
+on:
+  release:
+    types: [created]
+  push:
+    branches:
+      - vine
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+      
+      - name: Install dependencies for RemoteViewing
+        run: dotnet restore RemoteViewing\RemoteViewing.csproj
+
+      - name: Build for RemoteViewing
+        run: dotnet build RemoteViewing\RemoteViewing.csproj --configuration Release --no-restore
+
+      - name: Pack for RemoteViewing
+        run: dotnet pack RemoteViewing\RemoteViewing.csproj -c Release --no-build -o out
+
+      - name: Install dependencies for RemoteViewing.Windows.Forms
+        run: dotnet restore RemoteViewing.Windows.Forms\RemoteViewing.Windows.Forms.csproj
+
+      - name: Build for RemoteViewing.Windows.Forms
+        run: dotnet build RemoteViewing.Windows.Forms\RemoteViewing.Windows.Forms.csproj --configuration Release --no-restore
+
+      - name: Pack for RemoteViewing.Windows.Forms
+        run: dotnet pack RemoteViewing.Windows.Forms\RemoteViewing.Windows.Forms.csproj -c Release --no-build -o out
+
+      - name: Install dependencies for RemoteViewing.WPF
+        run: dotnet restore RemoteViewing.WPF\RemoteViewing.WPF.csproj
+
+      - name: Build for RemoteViewing.WPF
+        run: dotnet build RemoteViewing.WPF\RemoteViewing.WPF.csproj --configuration Release --no-restore
+
+      - name: Pack for RemoteViewing.WPF
+        run: dotnet pack RemoteViewing.WPF\RemoteViewing.WPF.csproj -c Release --no-build -o out
+
+      - name: Push NuGet package
+        # run:  dotnet nuget push "out\*.nupkg" -k ${{secrets.NUGET_AUTH_TOKEN}} --source https://api.nuget.org/v3/index.json
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: out/*.nupkg

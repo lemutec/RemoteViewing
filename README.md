@@ -13,6 +13,10 @@
 </p>
 
 <p align="center">
+  <a href="https://github.com/lemutec/RemoteViewing/actions/workflows/library.nuget.yml"><img src="https://github.com/lemutec/RemoteViewing/actions/workflows/library.nuget.yml/badge.svg" alt="Actions"></a>
+</p>
+
+<p align="center">
   <a href="#-features">✨ Features</a> •
   <a href="#-installation">📦 Installation</a> •
   <a href="#-usage">🚀 Usage</a> •
