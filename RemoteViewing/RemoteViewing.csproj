@@ -4,7 +4,7 @@
     <LangVersion>preview</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DocumentationFile>$(OutputPath)\RemoteViewing.xml</DocumentationFile>
+    <DocumentationFile>$(OutputPath)\Lemutec.RemoteViewing.xml</DocumentationFile>
     <NoWarn>1701;1702;CS0162;CS0414;CS1591;CS8981;IDE1006;SYSLIB0021</NoWarn>
     <PackageId>Lemutec.RemoteViewing</PackageId>
     <Product>Lemutec.RemoteViewing</Product>
@@ -13,7 +13,7 @@
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <AssemblyVersion>1.2.0.0</AssemblyVersion>
     <FileVersion>1.2.0.0</FileVersion>
-    <Version>$(VersionPrefix)1.2.0.0</Version>
+    <Version>$(VersionPrefix)1.2.0.0-rc1</Version>
     <Authors>James F. Bellinger, Lemutec</Authors>
     <Company>James F. Bellinger, Lemutec</Company>
     <Description>RemoteViewing is a .NET-native VNC client and server library. It supports Raw, Hextile, Copyrect, and Zlib encodings, and includes a Windows Forms and WPF control to make embedding VNC in your program extremely easy.</Description>
