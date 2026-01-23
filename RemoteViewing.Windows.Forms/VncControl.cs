@@ -79,12 +79,19 @@ public partial class VncControl : UserControl
     private int _buttons;
     private Point _mouseLocation;
 
-    private Cursor _dotCursor;
+    private readonly Cursor _dotCursor;
     private Bitmap _bitmap;
     private VncClient _client;
     private string _expectedClipboard = string.Empty;
-    private HashSet<int> _keysyms = [];
-    private float _scaleFactor = 1.0f;
+    private readonly HashSet<int> _keysyms = [];
+    private float _scaleFactor = 1f;
+
+    // FPS tracking
+    private int _frameCount;
+
+    private DateTime _lastFpsUpdate = DateTime.UtcNow;
+    private double _currentFps;
+    private readonly object _fpsLock = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="VncControl"/>.
@@ -269,13 +276,16 @@ public partial class VncControl : UserControl
         // Avoid calling when the handle is not created
         if (!IsHandleCreated) return;
 
+        // Update FPS counter
+        UpdateFpsCounter();
+
         _ = BeginInvoke(() =>
         {
             if (DesignMode) { return; }
 
             if (_client == null) { return; }
 
-            var framebuffer = _client.Framebuffer;
+            VncFramebuffer framebuffer = _client.Framebuffer;
             if (framebuffer == null) { return; }
 
             lock (framebuffer.SyncRoot)
@@ -327,15 +337,31 @@ public partial class VncControl : UserControl
         });
     }
 
+    private void UpdateFpsCounter()
+    {
+        lock (_fpsLock)
+        {
+            _frameCount++;
+            DateTime now = DateTime.UtcNow;
+            double elapsed = (now - _lastFpsUpdate).TotalSeconds;
+
+            if (elapsed >= 1d)
+            {
+                _currentFps = _frameCount / elapsed;
+                _frameCount = 0;
+                _lastFpsUpdate = now;
+            }
+        }
+    }
+
     private void RaiseFramebufferChanged()
     {
-        var ev = FramebufferChanged;
-        if (ev != null)
+        if (FramebufferChanged != null)
         {
-            BeginInvoke(new Action(() =>
+            BeginInvoke(() =>
             {
-                ev(this, EventArgs.Empty);
-            }));
+                FramebufferChanged(this, EventArgs.Empty);
+            });
         }
     }
 
@@ -632,6 +658,12 @@ public partial class VncControl : UserControl
                 }
 
                 e.Graphics.DrawImageUnscaled(_bitmap, 0, 0);
+
+                // Reset transform before drawing FPS overlay
+                if (scaleFactor < 1f)
+                {
+                    e.Graphics.ResetTransform();
+                }
             }
             else
             {
@@ -643,7 +675,40 @@ public partial class VncControl : UserControl
                     e.Graphics.DrawImage(_bitmap, dst, src, GraphicsUnit.Pixel);
                 }
             }
+
+            // Draw FPS overlay if enabled
+            if (ShowFps)
+            {
+                DrawFpsOverlay(e.Graphics);
+            }
         }
+    }
+
+    private void DrawFpsOverlay(Graphics g)
+    {
+        double fps;
+        lock (_fpsLock)
+        {
+            fps = _currentFps;
+        }
+
+        string fpsText = $"FPS:{fps:F0}";
+
+        using Font font = new("Consolas", 12, FontStyle.Bold);
+        SizeF textSize = g.MeasureString(fpsText, font);
+
+        // Draw background rectangle
+        const int padding = 4;
+        RectangleF bgRect = new(
+            padding,
+            padding,
+            textSize.Width + padding * 2,
+            textSize.Height + padding);
+
+        g.FillRectangle(new SolidBrush(Color.FromArgb(128, 0, 0, 0)), bgRect);
+
+        // Draw text
+        g.DrawString(fpsText, font, Brushes.White, padding * 2, padding + 2);
     }
 
     [DllImport("user32", EntryPoint = "AddClipboardFormatListener", SetLastError = true)]
@@ -735,6 +800,31 @@ public partial class VncControl : UserControl
     /// </summary>
     [DefaultValue(VncControlSizeMode.Zoom)]
     public VncControlSizeMode SizeMode { get; set; } = VncControlSizeMode.Zoom;
+
+    /// <summary>
+    /// Whether to display the current frames per second (FPS) in the top-left corner.
+    ///
+    /// By default, this is <c>false</c>.
+    /// </summary>
+    [DefaultValue(false)]
+    public bool ShowFps { get; set; }
+
+    /// <summary>
+    /// Gets the current frames per second (FPS) value.
+    /// This value is updated approximately once per second.
+    /// </summary>
+    [Browsable(false)]
+    [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+    public double CurrentFps
+    {
+        get
+        {
+            lock (_fpsLock)
+            {
+                return _currentFps;
+            }
+        }
+    }
 
     private float ScaleFactor
     {

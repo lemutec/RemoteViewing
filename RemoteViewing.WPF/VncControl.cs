@@ -82,14 +82,21 @@ public class VncControl : FrameworkElement
     private int _buttons;
     private Point _mouseLocation;
 
-    private Cursor _dotCursor;
+    private readonly Cursor _dotCursor;
     private WriteableBitmap _bitmap;
     private VncClient _client;
     private string _expectedClipboard = string.Empty;
-    private HashSet<int> _keysyms = [];
-    private float _scaleFactor = 1.0f;
+    private readonly HashSet<int> _keysyms = [];
+    private float _scaleFactor = 1f;
 
     private HwndSource _hwndSource;
+
+    // FPS tracking
+    private int _frameCount;
+
+    private DateTime _lastFpsUpdate = DateTime.UtcNow;
+    private double _currentFps;
+    private readonly object _fpsLock = new();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="VncControl"/>.
@@ -398,6 +405,9 @@ public class VncControl : FrameworkElement
 
     private void HandleFramebufferChanged(object sender, FramebufferChangedEventArgs e)
     {
+        // Update FPS counter
+        UpdateFpsCounter();
+
         Dispatcher.BeginInvoke(new Action(() =>
         {
             if (DesignerProperties.GetIsInDesignMode(this)) { return; }
@@ -424,6 +434,23 @@ public class VncControl : FrameworkElement
             InvalidateVisual();
             RaiseFramebufferChanged();
         }));
+    }
+
+    private void UpdateFpsCounter()
+    {
+        lock (_fpsLock)
+        {
+            _frameCount++;
+            var now = DateTime.UtcNow;
+            var elapsed = (now - _lastFpsUpdate).TotalSeconds;
+
+            if (elapsed >= 1.0)
+            {
+                _currentFps = _frameCount / elapsed;
+                _frameCount = 0;
+                _lastFpsUpdate = now;
+            }
+        }
     }
 
     private void RaiseFramebufferChanged()
@@ -770,7 +797,50 @@ public class VncControl : FrameworkElement
                     drawingContext.DrawImage(_bitmap, dst);
                 }
             }
+
+            // Draw FPS overlay if enabled
+            if (ShowFps)
+            {
+                DrawFpsOverlay(drawingContext);
+            }
         }
+    }
+
+    private void DrawFpsOverlay(DrawingContext drawingContext)
+    {
+        double fps;
+        lock (_fpsLock)
+        {
+            fps = _currentFps;
+        }
+
+        string fpsText = $"FPS:{fps:F0}";
+
+        Typeface typeface = new(new FontFamily("Consolas"), FontStyles.Normal, FontWeights.Normal, FontStretches.Normal);
+        FormattedText formattedText = new(
+            fpsText,
+            System.Globalization.CultureInfo.CurrentCulture,
+            FlowDirection.LeftToRight,
+            typeface,
+            14,
+            Brushes.White,
+            VisualTreeHelper.GetDpi(this).PixelsPerDip);
+
+        const double padding = 4d;
+        Rect bgRect = new(
+            padding,
+            padding,
+            formattedText.Width + padding * 2d,
+            formattedText.Height + padding);
+
+        // Draw background rectangle
+        drawingContext.DrawRectangle(
+            new SolidColorBrush(Color.FromArgb(128, 0, 0, 0)),
+            null,
+            bgRect);
+
+        // Draw text
+        drawingContext.DrawText(formattedText, new Point(padding * 2d, padding + 2d));
     }
 
     protected override void OnRenderSizeChanged(SizeChangedInfo sizeInfo)
@@ -977,6 +1047,28 @@ public class VncControl : FrameworkElement
     /// By default, this is <see cref="VncControlSizeMode.Zoom"/>.
     /// </summary>
     public VncControlSizeMode SizeMode { get; set; } = VncControlSizeMode.Zoom;
+
+    /// <summary>
+    /// Whether to display the current frames per second (FPS) in the top-left corner.
+    ///
+    /// By default, this is <c>false</c>.
+    /// </summary>
+    public bool ShowFps { get; set; }
+
+    /// <summary>
+    /// Gets the current frames per second (FPS) value.
+    /// This value is updated approximately once per second.
+    /// </summary>
+    public double CurrentFps
+    {
+        get
+        {
+            lock (_fpsLock)
+            {
+                return _currentFps;
+            }
+        }
+    }
 
     private float ScaleFactor
     {

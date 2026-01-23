@@ -1,4 +1,4 @@
-﻿#region License
+#region License
 
 /*
 RemoteViewing VNC Client/Server Library for .NET
@@ -129,13 +129,15 @@ public partial class MainForm : Form
         double recv = stats.BytesReceivedPerSecond;
         double send = stats.BytesSentPerSecond;
         int cpu = (int)Math.Round(stats.CpuUsage * 100);
+        double fps = vncControl.CurrentFps;
 
-        if (recv / 1024 >= 0.1 || send / 1024 >= 0.1 || cpu > 0)
+        if (recv / 1024 >= 0.1 || send / 1024 >= 0.1 || cpu > 0 || fps >= 0)
         {
-            title += string.Format("- {0} KB/s received, {1} KB/s sent, {2}% CPU"
+            title += string.Format(" - {0} KB/s received, {1} KB/s sent, {2}% CPU, {3} FPS"
                 , (recv / 1024).ToString("0.0")
                 , (send / 1024).ToString("0.0")
                 , cpu
+                , fps.ToString("0")
                 );
         }
 
