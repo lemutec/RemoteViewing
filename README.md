@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="logo.png" alt="RemoteViewing Logo" width="128" height="128">
+  <img src="https://raw.githubusercontent.com/lemutec/RemoteViewing/refs/heads/vine/logo.png" alt="RemoteViewing Logo" width="128" height="128">
 </p>
 
 <h1 align="center">RemoteViewing</h1>
