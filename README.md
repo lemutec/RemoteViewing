@@ -14,7 +14,7 @@
 
 <p align="center">
   <a href="https://github.com/lemutec/RemoteViewing/actions/workflows/library.nuget.yml"><img src="https://github.com/lemutec/RemoteViewing/actions/workflows/library.nuget.yml/badge.svg" alt="Actions"></a>
-  <a href="https://github.com/lemutec/RemoteViewing/blob/master/LICENSE.txt"><img src="https://img.shields.io/github/license/lemutec/RemoteViewing" alt="GitHub license"></a>
+  <a href="https://github.com/lemutec/RemoteViewing/blob/vine/LICENSE.txt"><img src="https://img.shields.io/github/license/lemutec/RemoteViewing" alt="GitHub license"></a>
   <a href="https://www.nuget.org/packages/Lemutec.RemoteViewing"><img src="https://img.shields.io/nuget/v/Lemutec.RemoteViewing.svg" alt="NuGet"></a>
 </p>
 
