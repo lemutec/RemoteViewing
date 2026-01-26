@@ -1,4 +1,4 @@
-1.2.0 (January 23, 2026):
+1.2.0 (January 26, 2026):
   Added a new WPF library (RemoteViewing.WPF) with full VncControl implementation.
   Redesigned AutoSize mode rendering to use ScaleTransform for efficient scaling without resizing the control.
   Added coordinate transformation system for proper mouse input handling in AutoSize mode.
