@@ -38,39 +38,6 @@ using System.Threading;
 namespace RemoteViewing.Vnc;
 
 /// <summary>
-/// Provides data for the <see cref="VncClient.Reconnecting"/> event.
-/// </summary>
-public class ReconnectingEventArgs : EventArgs
-{
-    /// <summary>
-    /// Initializes a new instance of the <see cref="ReconnectingEventArgs"/> class.
-    /// </summary>
-    /// <param name="attemptNumber">The current reconnection attempt number.</param>
-    /// <param name="maxAttempts">The maximum number of reconnection attempts, or -1 for unlimited.</param>
-    public ReconnectingEventArgs(int attemptNumber, int maxAttempts)
-    {
-        AttemptNumber = attemptNumber;
-        MaxAttempts = maxAttempts;
-    }
-
-    /// <summary>
-    /// Gets the current reconnection attempt number (1-based).
-    /// </summary>
-    public int AttemptNumber { get; }
-
-    /// <summary>
-    /// Gets the maximum number of reconnection attempts, or -1 for unlimited.
-    /// </summary>
-    public int MaxAttempts { get; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the reconnection attempt should be cancelled.
-    /// Set this to <c>true</c> to stop the reconnection process.
-    /// </summary>
-    public bool Cancel { get; set; }
-}
-
-/// <summary>
 /// Connects to a remote VNC server and interacts with it.
 /// </summary>
 public partial class VncClient
@@ -126,6 +93,7 @@ public partial class VncClient
 
     // Reconnection state
     private string _hostname;
+
     private int _port;
     private volatile bool _reconnecting;
     private volatile bool _stopReconnecting;

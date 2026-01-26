@@ -29,40 +29,38 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #endregion
 
 using System;
-using System.Collections.Generic;
 
 namespace RemoteViewing.Vnc;
 
 /// <summary>
-/// Provides data for the <see cref="VncClient.FramebufferChanged"/> event.
+/// Provides data for the <see cref="VncClient.Reconnecting"/> event.
 /// </summary>
-public class FramebufferChangedEventArgs : EventArgs
+public class ReconnectingEventArgs : EventArgs
 {
-    private List<VncRectangle> _rectangles;
-
     /// <summary>
-    /// Initializes a new instance of the <see cref="FramebufferChangedEventArgs"/> class.
+    /// Initializes a new instance of the <see cref="ReconnectingEventArgs"/> class.
     /// </summary>
-    /// <param name="rectangles">The bounding rectangles of the changed regions.</param>
-    public FramebufferChangedEventArgs(IEnumerable<VncRectangle> rectangles)
+    /// <param name="attemptNumber">The current reconnection attempt number.</param>
+    /// <param name="maxAttempts">The maximum number of reconnection attempts, or -1 for unlimited.</param>
+    public ReconnectingEventArgs(int attemptNumber, int maxAttempts)
     {
-        Throw.If.Null(rectangles, "rectangles");
-
-        _rectangles = [.. rectangles];
+        AttemptNumber = attemptNumber;
+        MaxAttempts = maxAttempts;
     }
 
     /// <summary>
-    /// Gets one of the changed regions.
+    /// Gets the current reconnection attempt number (1-based).
     /// </summary>
-    /// <param name="index">The index of the changed region. The first region has an index of 0.</param>
-    /// <returns>A rectangle describing the changed region.</returns>
-    public VncRectangle GetRectangle(int index)
-    {
-        return _rectangles[index];
-    }
+    public int AttemptNumber { get; }
 
     /// <summary>
-    /// The number of changed regions.
+    /// Gets the maximum number of reconnection attempts, or -1 for unlimited.
     /// </summary>
-    public int RectangleCount => _rectangles.Count;
+    public int MaxAttempts { get; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the reconnection attempt should be cancelled.
+    /// Set this to <c>true</c> to stop the reconnection process.
+    /// </summary>
+    public bool Cancel { get; set; }
 }
