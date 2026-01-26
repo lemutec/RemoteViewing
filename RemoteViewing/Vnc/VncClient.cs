@@ -83,19 +83,16 @@ public partial class VncClient
     /// </summary>
     public event EventHandler<RemoteClipboardChangedEventArgs> RemoteClipboardChanged;
 
-    private VncStream _c = new();
-    private VncStatisticsHelper _stats = new();
+    private readonly VncStream _c = new();
+    private readonly VncStatisticsHelper _stats = new();
     private int[] _colorMap;
     private VncClientConnectOptions _options;
     private VncPixelFormat _pixelFormat;
     private Version _serverVersion = new();
     private Thread _threadMain;
-
-    // Reconnection state
     private string _hostname;
-
     private int _port;
-    private volatile bool _reconnecting;
+    private volatile bool _reconnecting; // Reconnection state
     private volatile bool _stopReconnecting;
     private readonly object _reconnectLock = new();
 
@@ -800,10 +797,7 @@ public partial class VncClient
         set
         {
             if (value <= 0)
-            {
-                throw new ArgumentOutOfRangeException("Max update rate must be positive.",
-                                                      (Exception)null);
-            }
+                throw new ArgumentOutOfRangeException("Max update rate must be positive.", (Exception)null);
 
             field = value;
         }
