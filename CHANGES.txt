@@ -6,6 +6,8 @@
   Added FPS (frames per second) tracking to VncControl in both Windows Forms and WPF libraries.
   Added ShowFps property to display FPS overlay in the top-left corner of the VNC control.
   Added CurrentFps read-only property to programmatically access the current frame rate.
+  Added auto-reconnect support.
+  Fixed zlib stream memory growth in framebuffer decoder.
   Example applications now display FPS in the title bar alongside bandwidth and CPU statistics.
 
 1.1.0 (October 14, 2025):
