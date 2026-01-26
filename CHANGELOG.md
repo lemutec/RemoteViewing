@@ -6,7 +6,7 @@
   Added FPS (frames per second) tracking to VncControl in both Windows Forms and WPF libraries.
   Added ShowFps property to display FPS overlay in the top-left corner of the VNC control.
   Added CurrentFps read-only property to programmatically access the current frame rate.
-  Added auto-reconnect support.
+  Added auto-reconnect support (Note: This feature is experimental and not stable).
   Fixed zlib stream memory growth in framebuffer decoder.
   Example applications now display FPS in the title bar alongside bandwidth and CPU statistics.
 
@@ -16,17 +16,17 @@
   Fixed an occasional crash on exit in the Windows Forms VNC control.
   On 64-bit platforms, the VNC server is now another 25% faster when the desktop is idle.
   The VNC server now uses a steady amount of RAM, even when updating the screen quickly. As a result, the garbage collector no longer causes CPU spikes.
-  
+
 1.0.1 (October 9, 2025):
   Added (very) basic Hextile support to the VNC server.
   Fixed a lock-up in the VNC server.
   The VNC server is now 2.5X faster at updating frames.
   Started on bandwidth statistics support. This is not very accurate yet.
-  
+
 1.0.0 (September 24, 2025):
   Added support for 16-bit color.
   Fixed mouse coordinate scaling on the Windows Forms control.
-  
+
 0.9.4 (November 11, 2018):
   Fixed the VNC server behavior when an incorrect password is supplied.
 

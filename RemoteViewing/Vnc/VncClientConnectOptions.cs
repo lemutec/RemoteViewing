@@ -98,6 +98,7 @@ public sealed class VncClientConnectOptions
     ///
     /// This is set to <c>false</c> by default.
     /// </summary>
+    [Description("Note: This feature is experimental and not stable")]
     public bool AutoReconnect { get; set; } = false;
 
     /// <summary>
@@ -105,7 +106,7 @@ public sealed class VncClientConnectOptions
     ///
     /// This is set to 3000 (3 seconds) by default.
     /// </summary>
-    [Description("NOT_STABLE")]
+    [Description("Note: This feature is experimental and not stable")]
     public int ReconnectDelay { get; set; }
 
     /// <summary>
@@ -114,5 +115,6 @@ public sealed class VncClientConnectOptions
     ///
     /// This is set to -1 (unlimited) by default.
     /// </summary>
+    [Description("Note: This feature is experimental and not stable")]
     public int MaxReconnectAttempts { get; set; }
 }
