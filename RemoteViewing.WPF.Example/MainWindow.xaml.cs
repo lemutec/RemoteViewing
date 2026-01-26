@@ -42,14 +42,14 @@ namespace RemoteViewing.WPF.Example;
 /// </summary>
 public partial class MainWindow : Window
 {
-    private DispatcherTimer _statisticsTimer;
+    private readonly DispatcherTimer _statisticsTimer;
 
     public MainWindow()
     {
         InitializeComponent();
         UpdateTitle();
 
-        _statisticsTimer = new DispatcherTimer
+        _statisticsTimer = new DispatcherTimer()
         {
             Interval = TimeSpan.FromMilliseconds(250)
         };
@@ -57,7 +57,10 @@ public partial class MainWindow : Window
         _statisticsTimer.Start();
     }
 
+#pragma warning disable IDE1006 // Naming Styles
+
     private async void btnConnect_Click(object sender, RoutedEventArgs e)
+#pragma warning restore IDE1006 // Naming Styles
     {
         if (vncControl.Client.IsConnected)
         {
@@ -137,17 +140,26 @@ public partial class MainWindow : Window
         }
     }
 
+#pragma warning disable IDE1006 // Naming Styles
+
     private void vncControl_Connected(object sender, EventArgs e)
+#pragma warning restore IDE1006 // Naming Styles
     {
         btnConnect.Content = "Close";
     }
 
+#pragma warning disable IDE1006 // Naming Styles
+
     private void vncControl_Closed(object sender, EventArgs e)
+#pragma warning restore IDE1006 // Naming Styles
     {
         btnConnect.Content = "Connect";
     }
 
+#pragma warning disable IDE1006 // Naming Styles
+
     private void vncControl_ConnectionFailed(object sender, EventArgs e)
+#pragma warning restore IDE1006 // Naming Styles
     {
     }
 
