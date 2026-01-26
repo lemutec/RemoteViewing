@@ -1,4 +1,4 @@
-﻿#region License
+#region License
 
 /*
 RemoteViewing VNC Client/Server Library for .NET
@@ -39,13 +39,52 @@ partial class VncClient
 {
     private byte[] _framebufferScratch = [];
     private byte[] _zlibScratch = [];
-    private Stream _zlibMemoryStream;
+    private MemoryStream _zlibMemoryStream;
     private DeflateStream _zlibInflater;
 
     void InitFramebufferDecoder()
     {
         _zlibMemoryStream = new MemoryStream();
         _zlibInflater = null; // Don't reuse the dictionary between sessions.
+    }
+
+    /// <summary>
+    /// Compacts the zlib memory stream by removing already-consumed data from the beginning.
+    /// This prevents unbounded memory growth while preserving unconsumed data.
+    /// </summary>
+    private void CompactZlibStream()
+    {
+        long currentPos = _zlibMemoryStream.Position;
+        long length = _zlibMemoryStream.Length;
+
+        // Only compact if we've consumed more than 1MB
+        if (currentPos <= 1024 * 1024)
+        {
+            return;
+        }
+
+        int remaining = (int)(length - currentPos);
+        byte[] unconsumedData = null;
+
+        if (remaining > 0)
+        {
+            // Save the unconsumed data
+            unconsumedData = new byte[remaining];
+            _zlibMemoryStream.Read(unconsumedData, 0, remaining);
+        }
+
+        // Reset the stream
+        _zlibMemoryStream.Position = 0;
+        _zlibMemoryStream.SetLength(0);
+
+        if (remaining > 0)
+        {
+            // Write back the unconsumed data
+            _zlibMemoryStream.Write(unconsumedData, 0, remaining);
+        }
+
+        // Position at the beginning of the (preserved) unconsumed data
+        _zlibMemoryStream.Position = 0;
     }
 
     byte[] AllocateFramebufferScratch(int bytes)
@@ -185,15 +224,27 @@ partial class VncClient
                     VncUtility.AllocateScratch(size, ref _zlibScratch);
                     _c.Receive(_zlibScratch, 0, size);
 
-                    _zlibMemoryStream.Position = 0;
-                    _zlibMemoryStream.Write(_zlibScratch, 0, size);
-                    _zlibMemoryStream.SetLength(size);
-                    _zlibMemoryStream.Position = 0;
-
                     if (_zlibInflater == null) // Zlib has a two-byte header.
                     {
-                        VncStream.SanityCheck(size >= 2); _zlibMemoryStream.Position = 2;
-                        _zlibInflater = new DeflateStream(_zlibMemoryStream, CompressionMode.Decompress, false);
+                        VncStream.SanityCheck(size >= 2);
+                        // First Zlib block: skip the 2-byte zlib header
+                        _zlibMemoryStream.Position = 0;
+                        _zlibMemoryStream.SetLength(0);
+                        _zlibMemoryStream.Write(_zlibScratch, 2, size - 2);
+                        _zlibMemoryStream.Position = 0;
+                        _zlibInflater = new DeflateStream(_zlibMemoryStream, CompressionMode.Decompress, true);
+                    }
+                    else
+                    {
+                        // Subsequent Zlib blocks: append data to the stream
+                        // This preserves any data that DeflateStream may have buffered internally
+                        CompactZlibStream();
+
+                        // Append new data at the end of the stream
+                        long currentReadPos = _zlibMemoryStream.Position;
+                        _zlibMemoryStream.Seek(0, SeekOrigin.End);
+                        _zlibMemoryStream.Write(_zlibScratch, 0, size);
+                        _zlibMemoryStream.Position = currentReadPos;
                     }
 
                     pixels = AllocateFramebufferScratch(bytesDesired);
