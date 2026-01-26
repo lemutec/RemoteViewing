@@ -64,6 +64,16 @@ public partial class VncControl : UserControl
     public event EventHandler Closed;
 
     /// <summary>
+    /// Occurs when the VNC client is attempting to reconnect.
+    /// </summary>
+    public event EventHandler<ReconnectingEventArgs> Reconnecting;
+
+    /// <summary>
+    /// Occurs when the VNC client has given up reconnecting after reaching the maximum attempts.
+    /// </summary>
+    public event EventHandler ReconnectFailed;
+
+    /// <summary>
     /// Occurs when the framebuffer changes.
     /// </summary>
     public event EventHandler FramebufferChanged;
@@ -268,6 +278,28 @@ public partial class VncControl : UserControl
         {
             ClearInputState();
             Closed?.Invoke(this, EventArgs.Empty);
+        });
+    }
+
+    private void HandleReconnecting(object sender, ReconnectingEventArgs e)
+    {
+        // Avoid calling when the handle is not created
+        if (!IsHandleCreated) return;
+
+        _ = BeginInvoke(() =>
+        {
+            Reconnecting?.Invoke(this, e);
+        });
+    }
+
+    private void HandleReconnectFailed(object sender, EventArgs e)
+    {
+        // Avoid calling when the handle is not created
+        if (!IsHandleCreated) return;
+
+        _ = BeginInvoke(() =>
+        {
+            ReconnectFailed?.Invoke(this, EventArgs.Empty);
         });
     }
 
@@ -741,6 +773,8 @@ public partial class VncControl : UserControl
                 _client.Connected -= HandleConnected;
                 _client.ConnectionFailed -= HandleConnectionFailed;
                 _client.Closed -= HandleClosed;
+                _client.Reconnecting -= HandleReconnecting;
+                _client.ReconnectFailed -= HandleReconnectFailed;
                 _client.FramebufferChanged -= HandleFramebufferChanged;
                 _client.RemoteClipboardChanged -= HandleRemoteClipboardChanged;
             }
@@ -753,6 +787,8 @@ public partial class VncControl : UserControl
                 _client.Connected += HandleConnected;
                 _client.ConnectionFailed += HandleConnectionFailed;
                 _client.Closed += HandleClosed;
+                _client.Reconnecting += HandleReconnecting;
+                _client.ReconnectFailed += HandleReconnectFailed;
                 _client.FramebufferChanged += HandleFramebufferChanged;
                 _client.RemoteClipboardChanged += HandleRemoteClipboardChanged;
             }

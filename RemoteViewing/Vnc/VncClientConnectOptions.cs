@@ -1,4 +1,4 @@
-﻿#region License
+#region License
 
 /*
 RemoteViewing VNC Client/Server Library for .NET
@@ -28,6 +28,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #endregion
 
+using System.ComponentModel;
+
 namespace RemoteViewing.Vnc;
 
 /// <summary>
@@ -43,11 +45,25 @@ public delegate char[] PasswordRequiredCallback(VncClient client);
 public sealed class VncClientConnectOptions
 {
     /// <summary>
+    /// The default delay between reconnection attempts in milliseconds.
+    /// </summary>
+    public const int DefaultReconnectDelay = 3000;
+
+    /// <summary>
+    /// The default maximum number of reconnection attempts.
+    /// Use -1 for unlimited attempts.
+    /// </summary>
+    public const int DefaultMaxReconnectAttempts = -1;
+
+    /// <summary>
     /// Initializes a new instance of the <see cref="VncClientConnectOptions"/> class.
     /// </summary>
     public VncClientConnectOptions()
     {
         ShareDesktop = true;
+        AutoReconnect = false;
+        ReconnectDelay = DefaultReconnectDelay;
+        MaxReconnectAttempts = DefaultMaxReconnectAttempts;
     }
 
     /// <summary>
@@ -75,4 +91,28 @@ public sealed class VncClientConnectOptions
     /// This is set to <c>true</c> by default.
     /// </summary>
     public bool ShareDesktop { get; set; }
+
+    /// <summary>
+    /// <c>true</c> to automatically reconnect when the connection is lost.
+    /// <c>false</c> to not attempt reconnection.
+    ///
+    /// This is set to <c>false</c> by default.
+    /// </summary>
+    public bool AutoReconnect { get; set; } = false;
+
+    /// <summary>
+    /// The delay in milliseconds between reconnection attempts.
+    ///
+    /// This is set to 3000 (3 seconds) by default.
+    /// </summary>
+    [Description("NOT_STABLE")]
+    public int ReconnectDelay { get; set; }
+
+    /// <summary>
+    /// The maximum number of reconnection attempts.
+    /// Use -1 for unlimited attempts.
+    ///
+    /// This is set to -1 (unlimited) by default.
+    /// </summary>
+    public int MaxReconnectAttempts { get; set; }
 }

@@ -1,4 +1,4 @@
-﻿#region License
+#region License
 
 /*
 RemoteViewing VNC Client/Server Library for .NET
@@ -38,6 +38,39 @@ using System.Threading;
 namespace RemoteViewing.Vnc;
 
 /// <summary>
+/// Provides data for the <see cref="VncClient.Reconnecting"/> event.
+/// </summary>
+public class ReconnectingEventArgs : EventArgs
+{
+    /// <summary>
+    /// Initializes a new instance of the <see cref="ReconnectingEventArgs"/> class.
+    /// </summary>
+    /// <param name="attemptNumber">The current reconnection attempt number.</param>
+    /// <param name="maxAttempts">The maximum number of reconnection attempts, or -1 for unlimited.</param>
+    public ReconnectingEventArgs(int attemptNumber, int maxAttempts)
+    {
+        AttemptNumber = attemptNumber;
+        MaxAttempts = maxAttempts;
+    }
+
+    /// <summary>
+    /// Gets the current reconnection attempt number (1-based).
+    /// </summary>
+    public int AttemptNumber { get; }
+
+    /// <summary>
+    /// Gets the maximum number of reconnection attempts, or -1 for unlimited.
+    /// </summary>
+    public int MaxAttempts { get; }
+
+    /// <summary>
+    /// Gets or sets a value indicating whether the reconnection attempt should be cancelled.
+    /// Set this to <c>true</c> to stop the reconnection process.
+    /// </summary>
+    public bool Cancel { get; set; }
+}
+
+/// <summary>
 /// Connects to a remote VNC server and interacts with it.
 /// </summary>
 public partial class VncClient
@@ -63,6 +96,16 @@ public partial class VncClient
     public event EventHandler Closed;
 
     /// <summary>
+    /// Occurs when the VNC client is attempting to reconnect.
+    /// </summary>
+    public event EventHandler<ReconnectingEventArgs> Reconnecting;
+
+    /// <summary>
+    /// Occurs when the VNC client has given up reconnecting after reaching the maximum attempts.
+    /// </summary>
+    public event EventHandler ReconnectFailed;
+
+    /// <summary>
     /// Occurs when the framebuffer changes.
     /// </summary>
     public event EventHandler<FramebufferChangedEventArgs> FramebufferChanged;
@@ -81,6 +124,13 @@ public partial class VncClient
     private Version _serverVersion = new();
     private Thread _threadMain;
 
+    // Reconnection state
+    private string _hostname;
+    private int _port;
+    private volatile bool _reconnecting;
+    private volatile bool _stopReconnecting;
+    private readonly object _reconnectLock = new();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="VncClient"/> class.
     /// </summary>
@@ -94,8 +144,34 @@ public partial class VncClient
     /// </summary>
     public void Close()
     {
+        StopReconnecting();
         var thread = _threadMain; _c.Close();
         thread?.Join();
+    }
+
+    /// <summary>
+    /// Stops any ongoing reconnection attempts.
+    /// </summary>
+    public void StopReconnecting()
+    {
+        lock (_reconnectLock)
+        {
+            _stopReconnecting = true;
+        }
+    }
+
+    /// <summary>
+    /// Gets a value indicating whether the client is currently attempting to reconnect.
+    /// </summary>
+    public bool IsReconnecting
+    {
+        get
+        {
+            lock (_reconnectLock)
+            {
+                return _reconnecting;
+            }
+        }
     }
 
     /// <summary>
@@ -110,6 +186,11 @@ public partial class VncClient
 
         lock (_c.SyncRoot)
         {
+            // Store connection parameters for reconnection
+            _hostname = hostname;
+            _port = port;
+            _stopReconnecting = false;
+
             var client = new TcpClient();
 
             try
@@ -184,10 +265,12 @@ public partial class VncClient
         }
     }
 
-    void ThreadMain()
+    private void ThreadMain()
     {
         var requester = new Utility.PeriodicThread();
         IsConnected = true; OnConnected();
+
+        bool shouldReconnect = false;
 
         try
         {
@@ -236,21 +319,157 @@ public partial class VncClient
         }
         catch (ObjectDisposedException)
         {
+            // Check if auto-reconnect is enabled and this wasn't a user-initiated close
+            shouldReconnect = ShouldAttemptReconnect();
         }
         catch (IOException)
         {
+            // Network error - attempt reconnect if enabled
+            shouldReconnect = ShouldAttemptReconnect();
         }
         catch (VncException)
         {
+            // Protocol error - attempt reconnect if enabled
+            shouldReconnect = ShouldAttemptReconnect();
         }
 
         requester.Stop();
 
         _c.Stream = null;
         IsConnected = false; OnClosed();
+
+        // Attempt reconnection if enabled and not stopped
+        if (shouldReconnect)
+        {
+            AttemptReconnect();
+        }
     }
 
-    void NegotiateVersion()
+    private bool ShouldAttemptReconnect()
+    {
+        lock (_reconnectLock)
+        {
+            return _options?.AutoReconnect == true &&
+                   !_stopReconnecting &&
+                   !string.IsNullOrEmpty(_hostname);
+        }
+    }
+
+    private void AttemptReconnect()
+    {
+        lock (_reconnectLock)
+        {
+            if (_stopReconnecting || _reconnecting)
+            {
+                return;
+            }
+            _reconnecting = true;
+        }
+
+        var options = _options;
+        int maxAttempts = options?.MaxReconnectAttempts ?? VncClientConnectOptions.DefaultMaxReconnectAttempts;
+        int delay = options?.ReconnectDelay ?? VncClientConnectOptions.DefaultReconnectDelay;
+        int attempt = 0;
+
+        try
+        {
+            while (true)
+            {
+                lock (_reconnectLock)
+                {
+                    if (_stopReconnecting)
+                    {
+                        return;
+                    }
+                }
+
+                attempt++;
+
+                // Check if we've exceeded the maximum attempts
+                if (maxAttempts >= 0 && attempt > maxAttempts)
+                {
+                    OnReconnectFailed();
+                    return;
+                }
+
+                // Raise the Reconnecting event
+                var args = new ReconnectingEventArgs(attempt, maxAttempts);
+                OnReconnecting(args);
+
+                if (args.Cancel)
+                {
+                    OnReconnectFailed();
+                    return;
+                }
+
+                // Wait before attempting to reconnect
+                Thread.Sleep(delay);
+
+                lock (_reconnectLock)
+                {
+                    if (_stopReconnecting)
+                    {
+                        return;
+                    }
+                }
+
+                try
+                {
+                    // Attempt to reconnect using stored parameters
+                    lock (_c.SyncRoot)
+                    {
+                        var client = new TcpClient();
+
+                        try
+                        {
+                            client.Connect(_hostname, _port);
+                        }
+                        catch (Exception)
+                        {
+                            // Connection failed, continue to next attempt
+                            continue;
+                        }
+
+                        try
+                        {
+                            // Reset stop flag since we're starting a new connection
+                            lock (_reconnectLock)
+                            {
+                                _stopReconnecting = false;
+                                _reconnecting = false;
+                            }
+
+                            Connect(client.GetStream(), options);
+                            // Connection succeeded, exit the reconnection loop
+                            return;
+                        }
+                        catch (Exception)
+                        {
+                            client.Close();
+                            // Connection failed during negotiation, continue to next attempt
+                            lock (_reconnectLock)
+                            {
+                                _reconnecting = true;
+                            }
+                        }
+                    }
+                }
+                catch
+                {
+                    // Ignore exceptions during reconnection attempts
+                }
+            }
+        }
+        finally
+        {
+            lock (_reconnectLock)
+            {
+                _reconnecting = false;
+            }
+        }
+    }
+
+    private void NegotiateVersion()
     {
         _serverVersion = _c.ReceiveVersion();
         VncStream.Require(_serverVersion >= new Version(3, 7),
@@ -260,7 +479,7 @@ public partial class VncClient
         _c.SendVersion(new Version(3, 7));
     }
 
-    void NegotiateSecurity()
+    private void NegotiateSecurity()
     {
         int count = _c.ReceiveByte();
         if (count == 0)
@@ -316,7 +535,7 @@ public partial class VncClient
         }
     }
 
-    void NegotiateDesktop()
+    private void NegotiateDesktop()
     {
         _c.SendByte((byte)(_options.ShareDesktop ? 1 : 0));
 
@@ -340,7 +559,7 @@ public partial class VncClient
         _pixelFormat = pixelFormat;
     }
 
-    void NegotiatePixelFormat()
+    private void NegotiatePixelFormat()
     {
         if (_options.PixelFormat != null)
         {
@@ -355,7 +574,7 @@ public partial class VncClient
         }
     }
 
-    void NegotiateEncodings()
+    private void NegotiateEncodings()
     {
         var encodings = new VncEncoding[]
         {
@@ -371,7 +590,7 @@ public partial class VncClient
         foreach (var encoding in encodings) { _c.SendUInt32BE((uint)encoding); }
     }
 
-    void SendFramebufferUpdateRequest(bool incremental)
+    private void SendFramebufferUpdateRequest(bool incremental)
     {
         var p = new byte[10];
 
@@ -532,6 +751,26 @@ public partial class VncClient
     protected void RaiseClosed()
     {
         Closed?.Invoke(this, EventArgs.Empty);
+    }
+
+    protected virtual void OnReconnecting(ReconnectingEventArgs e)
+    {
+        RaiseReconnecting(e);
+    }
+
+    protected void RaiseReconnecting(ReconnectingEventArgs e)
+    {
+        Reconnecting?.Invoke(this, e);
+    }
+
+    protected virtual void OnReconnectFailed()
+    {
+        RaiseReconnectFailed();
+    }
+
+    protected void RaiseReconnectFailed()
+    {
+        ReconnectFailed?.Invoke(this, EventArgs.Empty);
     }
 
     protected virtual void OnFramebufferChanged(FramebufferChangedEventArgs e)
