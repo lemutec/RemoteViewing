@@ -5,10 +5,14 @@
     <LangVersion>preview</LangVersion>
     <Nullable>disable</Nullable>
     <BuiltInComInteropSupport>true</BuiltInComInteropSupport>
-    <ApplicationManifest>app.manifest</ApplicationManifest>
     <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
     <GenerateAssemblyInfo>true</GenerateAssemblyInfo>
     <NoWarn>1701;1702</NoWarn>
+  </PropertyGroup>
+
+  <!-- Windows-only application manifest (for Per-Monitor V2 DPI). Ignored on non-Windows hosts. -->
+  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
+    <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>
