@@ -329,7 +329,10 @@ public class VncServerSession
         _c.SendVersion(new Version(3, 8));
 
         _clientVersion = _c.ReceiveVersion();
-        if (_clientVersion == new Version(3, 8))
+
+        // Accept any RFB 3.7+ client. Previously this only accepted 3.8, which made older
+        // (or simply 3.7-hardcoded) clients fail with a "network error" right after connect.
+        if (_clientVersion >= new Version(3, 7))
         {
             methods = new[]
             {

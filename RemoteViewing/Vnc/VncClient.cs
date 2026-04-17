@@ -441,7 +441,12 @@ public partial class VncClient
                               "RFB 3.7 not supported by server.",
                               VncFailureReason.UnsupportedProtocolVersion);
 
-        _c.SendVersion(new Version(3, 7));
+        // Reply with the highest protocol version that both sides support.
+        // We currently implement RFB 3.7 and 3.8. Some servers (including our own) only accept 3.8,
+        // so we should not hardcode 3.7 here, otherwise compatible servers will drop the connection.
+        var clientVersion = new Version(3, 8);
+        if (_serverVersion < clientVersion) { clientVersion = _serverVersion; }
+        _c.SendVersion(clientVersion);
     }
 
     private void NegotiateSecurity()
