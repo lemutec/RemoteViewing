@@ -1,5 +1,13 @@
-﻿# Change to the script directory
-Set-Location -Path $PSScriptRoot
+﻿Set-Location $PSScriptRoot
+
+Write-Host @"
+███╗   ██╗██╗   ██╗ ██████╗ ███████╗████████╗
+████╗  ██║██║   ██║██╔════╝ ██╔════╝╚══██╔══╝
+██╔██╗ ██║██║   ██║██║  ███╗█████╗     ██║   
+██║╚██╗██║██║   ██║██║   ██║██╔══╝     ██║   
+██║ ╚████║╚██████╔╝╚██████╔╝███████╗   ██║   
+╚═╝  ╚═══╝ ╚═════╝  ╚═════╝ ╚══════╝   ╚═╝   
+"@
 
 # RemoteViewing
 Set-Location -Path (Join-Path $PSScriptRoot '..\RemoteViewing')
