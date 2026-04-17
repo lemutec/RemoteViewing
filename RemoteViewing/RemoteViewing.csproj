@@ -4,7 +4,7 @@
     <LangVersion>preview</LangVersion>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DocumentationFile>$(OutputPath)\Lemutec.RemoteViewing.xml</DocumentationFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>1701;1702;CS0162;CS0414;CS1591;CS8981;IDE1006;SYSLIB0021</NoWarn>
     <PackageId>Lemutec.RemoteViewing</PackageId>
     <Product>Lemutec.RemoteViewing</Product>

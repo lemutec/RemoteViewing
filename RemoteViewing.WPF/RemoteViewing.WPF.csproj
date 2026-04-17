@@ -5,7 +5,7 @@
     <UseWPF>true</UseWPF>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DocumentationFile>$(OutputPath)\Lemutec.RemoteViewing.WPF.xml</DocumentationFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>1701;1702;CA1416;CS1591</NoWarn>
     <PackageId>Lemutec.RemoteViewing.WPF</PackageId>
     <Product>Lemutec.RemoteViewing.WPF</Product>

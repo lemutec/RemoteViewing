@@ -46,6 +46,15 @@ jobs:
       - name: Pack for RemoteViewing.WPF
         run: dotnet pack RemoteViewing.WPF\RemoteViewing.WPF.csproj -c Release --no-build -o out
 
+      - name: Install dependencies for RemoteViewing.Avalonia
+        run: dotnet restore RemoteViewing.Avalonia\RemoteViewing.Avalonia.csproj
+
+      - name: Build for RemoteViewing.Avalonia
+        run: dotnet build RemoteViewing.Avalonia\RemoteViewing.Avalonia.csproj --configuration Release --no-restore
+
+      - name: Pack for RemoteViewing.Avalonia
+        run: dotnet pack RemoteViewing.Avalonia\RemoteViewing.Avalonia.csproj -c Release --no-build -o out
+
       - name: Push NuGet package
         # run:  dotnet nuget push "out\*.nupkg" -k ${{secrets.NUGET_AUTH_TOKEN}} --source https://api.nuget.org/v3/index.json
         uses: actions/upload-artifact@v4

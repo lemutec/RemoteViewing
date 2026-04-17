@@ -5,7 +5,7 @@
     <Nullable>disable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DocumentationFile>$(OutputPath)\Lemutec.RemoteViewing.Avalonia.xml</DocumentationFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>1701;1702;CA1416;CS1591</NoWarn>
     <PackageId>Lemutec.RemoteViewing.Avalonia</PackageId>
     <Product>Lemutec.RemoteViewing.Avalonia</Product>

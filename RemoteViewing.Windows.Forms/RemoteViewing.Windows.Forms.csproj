@@ -5,7 +5,7 @@
     <UseWindowsForms>true</UseWindowsForms>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
-    <DocumentationFile>$(OutputPath)\Lemutec.RemoteViewing.Windows.Forms.xml</DocumentationFile>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <NoWarn>1701;1702;CA1416;CS1591</NoWarn>
     <PackageId>Lemutec.RemoteViewing.Windows.Forms</PackageId>
     <Product>Lemutec.RemoteViewing.Windows.Forms</Product>
