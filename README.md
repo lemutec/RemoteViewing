@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  It supports Raw, Hextile, Copyrect, and Zlib encodings, and includes a Windows Forms and WPF control to make embedding VNC in your program extremely easy.
+  It supports Raw, Hextile, Copyrect, and Zlib encodings, and ships ready-to-use controls for Windows Forms, WPF, and cross-platform Avalonia UI, making it extremely easy to embed VNC in your program on Windows, Linux, or macOS.
 </p>
 
 <p align="center">
@@ -34,7 +34,8 @@
 - 🔄 **VNC Client & Server** - Full support for both client and server roles
 - 📦 **Multiple Encodings** - Raw, Hextile, Copyrect, and Zlib compression
 - 🎨 **Color Depth Support** - 8-bit, 16-bit, and 32-bit color modes
-- 🪟 **UI Controls** - Ready-to-use controls for Windows Forms and WPF
+- 🪟 **UI Controls** - Ready-to-use controls for Windows Forms, WPF, and Avalonia (cross-platform)
+- 🌐 **Cross-Platform UI** - Avalonia control runs on Windows, Linux, and macOS with no native VNC dependencies
 - 📋 **Clipboard Sharing** - Bidirectional clipboard synchronization
 - 📊 **Performance Monitoring** - Built-in FPS, bandwidth, and CPU statistics
 - 🔍 **AutoSize Mode** - Automatic scaling with proper coordinate transformation
@@ -48,6 +49,7 @@ Available on NuGet:
 | Lemutec.RemoteViewing | [![NuGet](https://img.shields.io/nuget/v/Lemutec.RemoteViewing)](https://www.nuget.org/packages/Lemutec.RemoteViewing) |
 | Lemutec.RemoteViewing.Windows.Forms | [![NuGet](https://img.shields.io/nuget/v/Lemutec.RemoteViewing.Windows.Forms)](https://www.nuget.org/packages/Lemutec.RemoteViewing.Windows.Forms) |
 | Lemutec.RemoteViewing.WPF | [![NuGet](https://img.shields.io/nuget/v/Lemutec.RemoteViewing.WPF)](https://www.nuget.org/packages/Lemutec.RemoteViewing.WPF) |
+| Lemutec.RemoteViewing.Avalonia | [![NuGet](https://img.shields.io/nuget/v/Lemutec.RemoteViewing.Avalonia)](https://www.nuget.org/packages/Lemutec.RemoteViewing.Avalonia) |
 
 Install via NuGet Package Manager:
 
@@ -60,6 +62,9 @@ dotnet add package Lemutec.RemoteViewing.Windows.Forms
 
 # WPF control
 dotnet add package Lemutec.RemoteViewing.WPF
+
+# Avalonia control (Windows / Linux / macOS)
+dotnet add package Lemutec.RemoteViewing.Avalonia
 ```
 
 ## 🚀 Usage
@@ -90,6 +95,49 @@ options.Password = "your-password".ToCharArray();
 vncControl.Client.Connect("hostname", 5900, options);
 ```
 
+### 🌐 VNC Client (Avalonia, cross-platform)
+
+XAML:
+
+```xml
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vnc="https://github.com/lemutec/RemoteViewing">
+    <vnc:VncControl x:Name="VncControl"
+                    SizeMode="Zoom"
+                    AllowClipboardSharingFromServer="True"
+                    AllowClipboardSharingToServer="True" />
+</Window>
+```
+
+Code-behind:
+
+```csharp
+using RemoteViewing.Vnc;
+using RemoteViewing.Avalonia;
+
+var options = new VncClientConnectOptions();
+options.Password = "your-password".ToCharArray();
+
+// Connect on a background thread so the UI stays responsive.
+await Task.Run(() => VncControl.Client.Connect("hostname", 5900, options));
+```
+
+Publish for any desktop platform from a single codebase:
+
+```bash
+# Windows
+dotnet publish -f net8.0 -r win-x64     --self-contained false
+
+# Linux (x64 / arm64)
+dotnet publish -f net8.0 -r linux-x64   --self-contained false
+dotnet publish -f net8.0 -r linux-arm64 --self-contained false
+
+# macOS (Intel / Apple Silicon)
+dotnet publish -f net8.0 -r osx-x64     --self-contained false
+dotnet publish -f net8.0 -r osx-arm64   --self-contained false
+```
+
 ### 🖧 VNC Server
 
 ```csharp
@@ -118,11 +166,12 @@ session.Connect(client.GetStream(), options);
 
 ## 🎯 Supported Frameworks
 
-| Package | Supported Frameworks |
-|---------|---------------------|
-| [Lemutec.RemoteViewing](https://www.nuget.org/packages/Lemutec.RemoteViewing) | .NET Framework 4.6.2-4.8, .NET Standard 2.0/2.1, .NET 5.0-10.0 |
-| [Lemutec.RemoteViewing.Windows.Forms](https://www.nuget.org/packages/Lemutec.RemoteViewing.Windows.Forms) | .NET Framework 4.6.2-4.8, .NET 5.0-10.0 (Windows) |
-| [Lemutec.RemoteViewing.WPF](https://www.nuget.org/packages/Lemutec.RemoteViewing.WPF) | .NET Framework 4.6.2-4.8, .NET 5.0-10.0 (Windows) |
+| Package | Supported Frameworks | Supported OS |
+|---------|---------------------|--------------|
+| [Lemutec.RemoteViewing](https://www.nuget.org/packages/Lemutec.RemoteViewing) | .NET Framework 4.6.2-4.8, .NET Standard 2.0/2.1, .NET 5.0-10.0 | Windows / Linux / macOS |
+| [Lemutec.RemoteViewing.Windows.Forms](https://www.nuget.org/packages/Lemutec.RemoteViewing.Windows.Forms) | .NET Framework 4.6.2-4.8, .NET 5.0-10.0 | Windows |
+| [Lemutec.RemoteViewing.WPF](https://www.nuget.org/packages/Lemutec.RemoteViewing.WPF) | .NET Framework 4.6.2-4.8, .NET 5.0-10.0 | Windows |
+| [Lemutec.RemoteViewing.Avalonia](https://www.nuget.org/packages/Lemutec.RemoteViewing.Avalonia) | .NET Standard 2.0, .NET 6.0-10.0 (Avalonia 11.x) | Windows / Linux / macOS |
 
 ## 📡 VNC Protocol Support
 
