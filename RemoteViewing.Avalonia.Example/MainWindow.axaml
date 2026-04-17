@@ -1,0 +1,59 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vnc="https://github.com/lemutec/RemoteViewing"
+        x:Class="RemoteViewing.Avalonia.Example.MainWindow"
+        Title="RemoteViewing - Example VNC Client (Avalonia)"
+        Width="900"
+        Height="600"
+        WindowState="Maximized">
+    <Grid RowDefinitions="Auto,*">
+        <!--  Connection Panel  -->
+        <Border Grid.Row="0" Padding="4">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+                <Button x:Name="BtnConnect"
+                        Width="90"
+                        Height="26"
+                        Click="BtnConnect_Click"
+                        Content="Connect" />
+
+                <TextBlock VerticalAlignment="Center" Text="Hostname:" />
+                <TextBox x:Name="TxtHostname"
+                         Width="200"
+                         Height="26"
+                         VerticalContentAlignment="Center"
+                         Text="127.0.0.1" />
+
+                <TextBlock VerticalAlignment="Center" Text="Port:" />
+                <TextBox x:Name="TxtPort"
+                         Width="80"
+                         Height="26"
+                         VerticalContentAlignment="Center"
+                         Text="5900" />
+
+                <TextBlock VerticalAlignment="Center" Text="Password:" />
+                <TextBox x:Name="TxtPassword"
+                         Width="150"
+                         Height="26"
+                         PasswordChar="*"
+                         VerticalContentAlignment="Center" />
+
+                <CheckBox x:Name="ChkShowFps"
+                          Content="Show FPS"
+                          IsCheckedChanged="ChkShowFps_IsCheckedChanged" />
+            </StackPanel>
+        </Border>
+
+        <!--  VNC Control  -->
+        <Border Grid.Row="1"
+                Margin="5"
+                Background="Black">
+            <vnc:VncControl x:Name="VncControl"
+                            AllowClipboardSharingFromServer="True"
+                            AllowClipboardSharingToServer="True"
+                            Closed="VncControl_Closed"
+                            Connected="VncControl_Connected"
+                            ConnectionFailed="VncControl_ConnectionFailed"
+                            SizeMode="Zoom" />
+        </Border>
+    </Grid>
+</Window>

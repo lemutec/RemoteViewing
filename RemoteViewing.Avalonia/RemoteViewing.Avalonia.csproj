@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFrameworks>netstandard2.0;net6.0;net8.0;net9.0;net10.0</TargetFrameworks>
+    <LangVersion>preview</LangVersion>
+    <Nullable>disable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <DocumentationFile>$(OutputPath)\Lemutec.RemoteViewing.Avalonia.xml</DocumentationFile>
+    <NoWarn>1701;1702;CA1416;CS1591</NoWarn>
+    <PackageId>Lemutec.RemoteViewing.Avalonia</PackageId>
+    <Product>Lemutec.RemoteViewing.Avalonia</Product>
+    <AssemblyName>Lemutec.RemoteViewing.Avalonia</AssemblyName>
+    <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    <AssemblyVersion>1.2.0.0</AssemblyVersion>
+    <FileVersion>1.2.0.0</FileVersion>
+    <Version>$(VersionPrefix)1.2.0.0</Version>
+    <Authors>James F. Bellinger, Lemutec</Authors>
+    <Company>James F. Bellinger, Lemutec</Company>
+    <Description>RemoteViewing is a .NET-native VNC client and server library. This package adds a cross-platform Avalonia control so you can embed a VNC viewer in Avalonia UI applications on Windows, macOS and Linux.</Description>
+    <PackageProjectUrl>https://github.com/lemutec/RemoteViewing</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/lemutec/RemoteViewing</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>csharp vnc-client vnc-server vnc rfb avalonia avaloniaui</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageIcon>logo.png</PackageIcon>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <DebugType>portable</DebugType>
+    <DebugSymbols>true</DebugSymbols>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath=""/>
+    <None Include="..\logo.png" Pack="true" PackagePath=""/>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.2.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RemoteViewing\RemoteViewing.csproj"/>
+  </ItemGroup>
+</Project>
