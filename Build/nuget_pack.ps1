@@ -19,6 +19,12 @@ dotnet restore
 dotnet build -c Release
 dotnet pack -c Release -o ../Build/
 
+# RemoteViewing.Avalonia
+Set-Location -Path (Join-Path $PSScriptRoot '..\RemoteViewing.Avalonia')
+dotnet restore
+dotnet build -c Release
+dotnet pack -c Release -o ../Build/
+
 # Return to the script directory
 Set-Location -Path $PSScriptRoot
 

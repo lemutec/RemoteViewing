@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
     <TargetFrameworks>netstandard2.0;net6.0;net8.0;net9.0;net10.0</TargetFrameworks>
     <LangVersion>preview</LangVersion>
@@ -11,9 +11,9 @@
     <Product>Lemutec.RemoteViewing.Avalonia</Product>
     <AssemblyName>Lemutec.RemoteViewing.Avalonia</AssemblyName>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-    <AssemblyVersion>1.2.0.0</AssemblyVersion>
-    <FileVersion>1.2.0.0</FileVersion>
-    <Version>$(VersionPrefix)1.2.0.0</Version>
+    <AssemblyVersion>1.2.1.0</AssemblyVersion>
+    <FileVersion>1.2.1.0</FileVersion>
+    <Version>$(VersionPrefix)1.2.1.0</Version>
     <Authors>James F. Bellinger, Lemutec</Authors>
     <Company>James F. Bellinger, Lemutec</Company>
     <Description>RemoteViewing is a .NET-native VNC client and server library. This package adds a cross-platform Avalonia control so you can embed a VNC viewer in Avalonia UI applications on Windows, macOS and Linux.</Description>

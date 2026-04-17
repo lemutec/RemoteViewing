@@ -102,6 +102,7 @@ public class VncControl : AvaControl
 
     // FPS tracking
     private int _frameCount;
+
     private DateTime _lastFpsUpdate = DateTime.UtcNow;
     private double _currentFps;
     private readonly object _fpsLock = new();
