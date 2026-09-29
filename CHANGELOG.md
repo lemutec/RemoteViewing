@@ -1,3 +1,6 @@
+1.2.1:
+  Added a WinUI 3 library (RemoteViewing.WinUI) with VncControl, plus an unpackaged demo app.
+
 1.2.0 (2026-01-26):
   Added a new WPF library (RemoteViewing.WPF) with full VncControl implementation.
   Redesigned AutoSize mode rendering to use ScaleTransform for efficient scaling without resizing the control.

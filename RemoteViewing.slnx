@@ -7,4 +7,6 @@
   <Project Path="RemoteViewing.Windows.Forms.Example/RemoteViewing.Windows.Forms.Example.csproj" Id="d6771918-a3df-4ec6-86df-11e02dda2780" />
   <Project Path="RemoteViewing.Avalonia/RemoteViewing.Avalonia.csproj" Id="a1b3d5c7-2e9f-4a12-a8d3-6e1f8a2b9c04" />
   <Project Path="RemoteViewing.Avalonia.Example/RemoteViewing.Avalonia.Example.csproj" Id="c4e2f9a3-3b11-4cde-9f0a-5b6a7d8e9f10" />
+  <Project Path="RemoteViewing.WinUI/RemoteViewing.WinUI.csproj" Id="d8f14c2a-7b61-4e90-a3c5-1e6b9d0f4a72" />
+  <Project Path="RemoteViewing.WinUI.Example/RemoteViewing.WinUI.Example.csproj" Id="f2a86e15-4c73-4d08-b7e1-9a0c5d3e8b64" />
 </Solution>

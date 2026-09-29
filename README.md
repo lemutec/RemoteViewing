@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-  It supports Raw, Hextile, Copyrect, and Zlib encodings, and ships ready-to-use controls for Windows Forms, WPF, and cross-platform Avalonia UI, making it extremely easy to embed VNC in your program on Windows, Linux, or macOS.
+  It supports Raw, Hextile, Copyrect, and Zlib encodings, and ships ready-to-use controls for Windows Forms, WPF, WinUI 3, and cross-platform Avalonia UI, making it extremely easy to embed VNC in your program on Windows, Linux, or macOS.
 </p>
 
 <p align="center">
@@ -34,7 +34,7 @@
 - 🔄 **VNC Client & Server** - Full support for both client and server roles
 - 📦 **Multiple Encodings** - Raw, Hextile, Copyrect, and Zlib compression
 - 🎨 **Color Depth Support** - 8-bit, 16-bit, and 32-bit color modes
-- 🪟 **UI Controls** - Ready-to-use controls for Windows Forms, WPF, and Avalonia (cross-platform)
+- 🪟 **UI Controls** - Ready-to-use controls for Windows Forms, WPF, WinUI 3, and Avalonia (cross-platform)
 - 🌐 **Cross-Platform UI** - Avalonia control runs on Windows, Linux, and macOS with no native VNC dependencies
 - 📋 **Clipboard Sharing** - Bidirectional clipboard synchronization
 - 📊 **Performance Monitoring** - Built-in FPS, bandwidth, and CPU statistics
@@ -50,6 +50,7 @@ Available on NuGet:
 | Lemutec.RemoteViewing.Windows.Forms | [![NuGet](https://img.shields.io/nuget/v/Lemutec.RemoteViewing.Windows.Forms)](https://www.nuget.org/packages/Lemutec.RemoteViewing.Windows.Forms) |
 | Lemutec.RemoteViewing.WPF | [![NuGet](https://img.shields.io/nuget/v/Lemutec.RemoteViewing.WPF)](https://www.nuget.org/packages/Lemutec.RemoteViewing.WPF) |
 | Lemutec.RemoteViewing.Avalonia | [![NuGet](https://img.shields.io/nuget/v/Lemutec.RemoteViewing.Avalonia)](https://www.nuget.org/packages/Lemutec.RemoteViewing.Avalonia) |
+| Lemutec.RemoteViewing.WinUI | [![NuGet](https://img.shields.io/nuget/v/Lemutec.RemoteViewing.WinUI)](https://www.nuget.org/packages/Lemutec.RemoteViewing.WinUI) |
 
 Install via NuGet Package Manager:
 
@@ -65,6 +66,9 @@ dotnet add package Lemutec.RemoteViewing.WPF
 
 # Avalonia control (Windows / Linux / macOS)
 dotnet add package Lemutec.RemoteViewing.Avalonia
+
+# WinUI 3 control (Windows App SDK)
+dotnet add package Lemutec.RemoteViewing.WinUI
 ```
 
 ## 🚀 Usage
@@ -138,6 +142,36 @@ dotnet publish -f net8.0 -r osx-x64     --self-contained false
 dotnet publish -f net8.0 -r osx-arm64   --self-contained false
 ```
 
+### 🪟 VNC Client (WinUI 3)
+
+XAML:
+
+```xml
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vnc="using:RemoteViewing.WinUI">
+    <vnc:VncControl x:Name="Vnc"
+                    SizeMode="Zoom"
+                    AllowClipboardSharingFromServer="True"
+                    AllowClipboardSharingToServer="True" />
+</Window>
+```
+
+Code-behind:
+
+```csharp
+using RemoteViewing.Vnc;
+using RemoteViewing.WinUI;
+
+var options = new VncClientConnectOptions();
+options.Password = "your-password".ToCharArray();
+
+// Connect on a background thread so the UI stays responsive.
+await Task.Run(() => Vnc.Client.Connect("hostname", 5900, options));
+```
+
+The control targets `net10.0-windows10.0.19041.0` and Windows App SDK 2.x. Unpackaged apps should set `WindowsPackageType` to `None`.
+
 ### 🖧 VNC Server
 
 ```csharp
@@ -172,6 +206,7 @@ session.Connect(client.GetStream(), options);
 | [Lemutec.RemoteViewing.Windows.Forms](https://www.nuget.org/packages/Lemutec.RemoteViewing.Windows.Forms) | .NET Framework 4.6.2-4.8, .NET 5.0-10.0 | Windows |
 | [Lemutec.RemoteViewing.WPF](https://www.nuget.org/packages/Lemutec.RemoteViewing.WPF) | .NET Framework 4.6.2-4.8, .NET 5.0-10.0 | Windows |
 | [Lemutec.RemoteViewing.Avalonia](https://www.nuget.org/packages/Lemutec.RemoteViewing.Avalonia) | .NET Standard 2.0, .NET 6.0-10.0 (Avalonia 11.x) | Windows / Linux / macOS |
+| [Lemutec.RemoteViewing.WinUI](https://www.nuget.org/packages/Lemutec.RemoteViewing.WinUI) | .NET 10.0 (Windows App SDK 2.x, Windows 10 1809+) | Windows |
 
 ## 📡 VNC Protocol Support
 
