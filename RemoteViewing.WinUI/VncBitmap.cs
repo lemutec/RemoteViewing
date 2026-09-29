@@ -70,7 +70,23 @@ public static class VncBitmap
                 for (int iy = 0; iy < sourceRectangle.Height; iy++)
                 {
                     stream.Position = ((long)sourceRectangle.Y + iy) * sourceStride + sourceRectangle.X * 4;
-                    ReadExactly(stream, row, 0, rowBytes);
+#if NET7_0_OR_GREATER
+                    stream.ReadExactly(row, 0, rowBytes);
+#else
+                    int offset = 0;
+                    int remaining = rowBytes;
+                    while (remaining > 0)
+                    {
+                        int read = stream.Read(row, offset, remaining);
+                        if (read == 0)
+                        {
+                            throw new EndOfStreamException();
+                        }
+
+                        offset += read;
+                        remaining -= read;
+                    }
+#endif
 
                     byte* targetRow = (byte*)framebufferData + (targetY + iy) * targetStride + targetX * 4;
                     Buffer.MemoryCopy(rowPtr, targetRow, rowBytes, rowBytes);
@@ -142,24 +158,5 @@ public static class VncBitmap
     public static WriteableBitmap CreateBitmap(int width, int height)
     {
         return new WriteableBitmap(width, height);
-    }
-
-    private static void ReadExactly(Stream stream, byte[] buffer, int offset, int count)
-    {
-#if NET7_0_OR_GREATER
-        stream.ReadExactly(buffer, offset, count);
-#else
-        while (count > 0)
-        {
-            int read = stream.Read(buffer, offset, count);
-            if (read == 0)
-            {
-                throw new EndOfStreamException();
-            }
-
-            offset += read;
-            count -= read;
-        }
-#endif
     }
 }

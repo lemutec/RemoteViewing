@@ -60,21 +60,4 @@
   <ItemGroup>
     <ProjectReference Include="..\RemoteViewing\RemoteViewing.csproj" />
   </ItemGroup>
-
-  <!--
-    Rebuild cleans obj, then each target framework builds in parallel.
-    An inner restore would overwrite project.assets.json with a single framework
-    and the others fail with NETSDK1005. Restore every framework once, first.
-  -->
-  <PropertyGroup Condition="'$(TargetFramework)' != ''">
-    <RestoreDuringBuild>false</RestoreDuringBuild>
-  </PropertyGroup>
-
-  <Target Name="RestoreAllFrameworksBeforeInnerBuilds"
-          BeforeTargets="DispatchToInnerBuilds"
-          Condition="'$(TargetFramework)' == ''">
-    <MSBuild Projects="$(MSBuildProjectFullPath)"
-             Targets="Restore"
-             RemoveProperties="TargetFramework" />
-  </Target>
 </Project>
