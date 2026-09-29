@@ -9,6 +9,7 @@ All rights reserved.
 #endregion
 
 using Microsoft.UI.Xaml;
+using Windows.UI.ViewManagement;
 
 namespace RemoteViewing.WinUI.Example;
 
@@ -18,6 +19,7 @@ public partial class App : Application
 
     public App()
     {
+        RequestedTheme = SystemTheme.IsDark() ? ApplicationTheme.Dark : ApplicationTheme.Light;
         InitializeComponent();
     }
 

@@ -30,6 +30,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 using System;
 using System.Buffers;
+using System.IO;
 using System.Runtime.InteropServices.WindowsRuntime;
 using Microsoft.UI.Xaml.Media.Imaging;
 using RemoteViewing.Vnc;
@@ -69,7 +70,7 @@ public static class VncBitmap
                 for (int iy = 0; iy < sourceRectangle.Height; iy++)
                 {
                     stream.Position = ((long)sourceRectangle.Y + iy) * sourceStride + sourceRectangle.X * 4;
-                    stream.ReadExactly(row, 0, rowBytes);
+                    ReadExactly(stream, row, 0, rowBytes);
 
                     byte* targetRow = (byte*)framebufferData + (targetY + iy) * targetStride + targetX * 4;
                     Buffer.MemoryCopy(rowPtr, targetRow, rowBytes, rowBytes);
@@ -141,5 +142,24 @@ public static class VncBitmap
     public static WriteableBitmap CreateBitmap(int width, int height)
     {
         return new WriteableBitmap(width, height);
+    }
+
+    private static void ReadExactly(Stream stream, byte[] buffer, int offset, int count)
+    {
+#if NET7_0_OR_GREATER
+        stream.ReadExactly(buffer, offset, count);
+#else
+        while (count > 0)
+        {
+            int read = stream.Read(buffer, offset, count);
+            if (read == 0)
+            {
+                throw new EndOfStreamException();
+            }
+
+            offset += read;
+            count -= read;
+        }
+#endif
     }
 }

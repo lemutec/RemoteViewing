@@ -31,6 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using Microsoft.UI.Input;
 using Microsoft.UI.Xaml;
@@ -120,10 +121,13 @@ public class VncControl : UserControl
         DependencyProperty.Register(nameof(ShowFps), typeof(bool), typeof(VncControl),
             new PropertyMetadata(false, OnShowFpsChanged));
 
+    private readonly Grid _root;
     private readonly Canvas _canvas;
     private readonly Image _image;
     private readonly Border _fpsHost;
     private readonly TextBlock _fpsText;
+
+    private const uint DotCursorResourceId = 1;
 
     private int _buttons;
     private Point _mouseLocation;
@@ -131,9 +135,9 @@ public class VncControl : UserControl
     private VncClient _client;
     private string _expectedClipboard = string.Empty;
     private readonly HashSet<int> _keysyms = new();
+    private bool _clipboardHooked;
     private InputCursor _dotCursor;
     private InputCursor _arrowCursor;
-    private bool _clipboardHooked;
 
     private int _frameCount;
     private DateTime _lastFpsUpdate = DateTime.UtcNow;
@@ -177,17 +181,15 @@ public class VncControl : UserControl
             Child = _fpsText,
         };
 
-        var root = new Grid
-        {
-            Background = new SolidColorBrush(Microsoft.UI.Colors.Black),
-        };
-        root.Children.Add(_canvas);
-        root.Children.Add(_fpsHost);
-        Content = root;
+        _root = new Grid();
+        _root.Children.Add(_canvas);
+        _root.Children.Add(_fpsHost);
+        Content = _root;
 
         IsTabStop = true;
         UseSystemFocusVisuals = false;
-        Background = new SolidColorBrush(Microsoft.UI.Colors.Black);
+        ActualThemeChanged += (_, _) => ApplyChromeBackground();
+        ApplyChromeBackground();
 
         Client = new VncClient();
 
@@ -384,19 +386,7 @@ public class VncControl : UserControl
         base.OnPointerEntered(e);
         if (!IsDesignMode && AllowRemoteCursor)
         {
-            EnsureCursors();
-            ProtectedCursor = _dotCursor;
-        }
-    }
-
-    /// <inheritdoc />
-    protected override void OnPointerExited(PointerRoutedEventArgs e)
-    {
-        base.OnPointerExited(e);
-        if (!IsDesignMode && AllowRemoteCursor)
-        {
-            EnsureCursors();
-            ProtectedCursor = _arrowCursor;
+            EnsureRemoteCursor();
         }
     }
 
@@ -462,10 +452,15 @@ public class VncControl : UserControl
 
     private void VncControl_Loaded(object sender, RoutedEventArgs e)
     {
-        if (IsDesignMode || _clipboardHooked) { return; }
+        if (IsDesignMode) { return; }
 
-        Clipboard.ContentChanged += Clipboard_ContentChanged;
-        _clipboardHooked = true;
+        if (!_clipboardHooked)
+        {
+            Clipboard.ContentChanged += Clipboard_ContentChanged;
+            _clipboardHooked = true;
+        }
+
+        EnsureRemoteCursor();
     }
 
     private void VncControl_Unloaded(object sender, RoutedEventArgs e)
@@ -519,10 +514,75 @@ public class VncControl : UserControl
         }
     }
 
-    private void EnsureCursors()
+    private void ApplyChromeBackground()
     {
-        _dotCursor ??= InputSystemCursor.Create(InputSystemCursorShape.Cross);
-        _arrowCursor ??= InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+        Brush brush = TryGetThemeBrush(ActualTheme, "SolidBackgroundFillColorBaseBrush");
+        if (brush == null)
+        {
+            var color = ActualTheme == ElementTheme.Dark
+                ? Windows.UI.Color.FromArgb(255, 32, 32, 32)
+                : Windows.UI.Color.FromArgb(255, 243, 243, 243);
+            brush = new SolidColorBrush(color);
+        }
+
+        _root.Background = brush;
+        Background = brush;
+    }
+
+    private static Brush TryGetThemeBrush(ElementTheme theme, string key)
+    {
+        ResourceDictionary resources = Application.Current?.Resources;
+        if (resources?.ThemeDictionaries == null)
+        {
+            return null;
+        }
+
+        string themeKey = theme == ElementTheme.Dark ? "Dark" : "Light";
+        if (resources.ThemeDictionaries.TryGetValue(themeKey, out object dictionary)
+            && dictionary is ResourceDictionary themeDictionary
+            && themeDictionary.TryGetValue(key, out object value)
+            && value is Brush brush)
+        {
+            return brush;
+        }
+
+        if (resources.TryGetValue(key, out object fallback) && fallback is Brush fallbackBrush)
+        {
+            return fallbackBrush;
+        }
+
+        return null;
+    }
+
+    private void EnsureRemoteCursor()
+    {
+        if (_arrowCursor == null)
+        {
+            _arrowCursor = InputSystemCursor.Create(InputSystemCursorShape.Arrow);
+        }
+
+        if (!AllowRemoteCursor)
+        {
+            ProtectedCursor = _arrowCursor;
+            return;
+        }
+
+        if (_dotCursor == null)
+        {
+            try
+            {
+                string module = Assembly.GetExecutingAssembly().Location;
+                if (!string.IsNullOrEmpty(module))
+                {
+                    _dotCursor = InputDesktopResourceCursor.CreateFromModule(module, DotCursorResourceId);
+                }
+            }
+            catch
+            {
+            }
+        }
+
+        ProtectedCursor = _dotCursor ?? _arrowCursor;
     }
 
     private void ClearInputState()

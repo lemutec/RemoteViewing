@@ -16,16 +16,21 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Input;
 using RemoteViewing.Vnc;
+using Windows.UI;
+using Windows.UI.ViewManagement;
 
 namespace RemoteViewing.WinUI.Example;
 
 public sealed partial class MainWindow : Window
 {
     private readonly DispatcherTimer _statisticsTimer;
+    private readonly UISettings _uiSettings = new();
 
     public MainWindow()
     {
         InitializeComponent();
+        ApplySystemTheme();
+        _uiSettings.ColorValuesChanged += UiSettings_ColorValuesChanged;
 
         if (AppWindow.Presenter is OverlappedPresenter presenter)
         {
@@ -176,6 +181,7 @@ public sealed partial class MainWindow : Window
             Content = message,
             CloseButtonText = "OK",
             XamlRoot = Root.XamlRoot,
+            RequestedTheme = Root.ActualTheme,
         };
 
         await dialog.ShowAsync();
@@ -183,8 +189,49 @@ public sealed partial class MainWindow : Window
 
     private void MainWindow_Closed(object sender, WindowEventArgs e)
     {
+        _uiSettings.ColorValuesChanged -= UiSettings_ColorValuesChanged;
         _statisticsTimer.Stop();
         try { Vnc?.Client?.Close(); }
         catch { }
+    }
+
+    private void UiSettings_ColorValuesChanged(UISettings sender, object args)
+    {
+        DispatcherQueue.TryEnqueue(ApplySystemTheme);
+    }
+
+    private void ApplySystemTheme()
+    {
+        Root.RequestedTheme = SystemTheme.IsDark() ? ElementTheme.Dark : ElementTheme.Light;
+        ApplyTitleBar();
+    }
+
+    private void ApplyTitleBar()
+    {
+        if (!AppWindowTitleBar.IsCustomizationSupported())
+        {
+            return;
+        }
+
+        bool dark = Root.ActualTheme == ElementTheme.Dark;
+        Color background = dark ? Color.FromArgb(255, 32, 32, 32) : Color.FromArgb(255, 243, 243, 243);
+        Color foreground = dark ? Color.FromArgb(255, 255, 255, 255) : Color.FromArgb(255, 0, 0, 0);
+        Color inactiveForeground = dark ? Color.FromArgb(255, 160, 160, 160) : Color.FromArgb(255, 102, 102, 102);
+        Color hover = dark ? Color.FromArgb(255, 51, 51, 51) : Color.FromArgb(255, 230, 230, 230);
+        Color pressed = dark ? Color.FromArgb(255, 68, 68, 68) : Color.FromArgb(255, 214, 214, 214);
+
+        AppWindowTitleBar titleBar = AppWindow.TitleBar;
+        titleBar.BackgroundColor = background;
+        titleBar.ForegroundColor = foreground;
+        titleBar.InactiveBackgroundColor = background;
+        titleBar.InactiveForegroundColor = inactiveForeground;
+        titleBar.ButtonBackgroundColor = background;
+        titleBar.ButtonForegroundColor = foreground;
+        titleBar.ButtonInactiveBackgroundColor = background;
+        titleBar.ButtonInactiveForegroundColor = inactiveForeground;
+        titleBar.ButtonHoverBackgroundColor = hover;
+        titleBar.ButtonHoverForegroundColor = foreground;
+        titleBar.ButtonPressedBackgroundColor = pressed;
+        titleBar.ButtonPressedForegroundColor = foreground;
     }
 }

@@ -170,7 +170,7 @@ options.Password = "your-password".ToCharArray();
 await Task.Run(() => Vnc.Client.Connect("hostname", 5900, options));
 ```
 
-The control targets `net10.0-windows10.0.19041.0` and Windows App SDK 2.x. Unpackaged apps should set `WindowsPackageType` to `None`.
+The control targets `net6.0-windows10.0.19041.0` and later (`net8.0`, `net9.0`, `net10.0`) with Windows App SDK 2.x. Unpackaged apps should set `WindowsPackageType` to `None`.
 
 ### 🖧 VNC Server
 
@@ -206,7 +206,7 @@ session.Connect(client.GetStream(), options);
 | [Lemutec.RemoteViewing.Windows.Forms](https://www.nuget.org/packages/Lemutec.RemoteViewing.Windows.Forms) | .NET Framework 4.6.2-4.8, .NET 5.0-10.0 | Windows |
 | [Lemutec.RemoteViewing.WPF](https://www.nuget.org/packages/Lemutec.RemoteViewing.WPF) | .NET Framework 4.6.2-4.8, .NET 5.0-10.0 | Windows |
 | [Lemutec.RemoteViewing.Avalonia](https://www.nuget.org/packages/Lemutec.RemoteViewing.Avalonia) | .NET Standard 2.0, .NET 6.0-10.0 (Avalonia 11.x) | Windows / Linux / macOS |
-| [Lemutec.RemoteViewing.WinUI](https://www.nuget.org/packages/Lemutec.RemoteViewing.WinUI) | .NET 10.0 (Windows App SDK 2.x, Windows 10 1809+) | Windows |
+| [Lemutec.RemoteViewing.WinUI](https://www.nuget.org/packages/Lemutec.RemoteViewing.WinUI) | .NET 6.0, 8.0-10.0 (Windows App SDK 2.x, Windows 10 1809+) | Windows |
 
 ## 📡 VNC Protocol Support
 
